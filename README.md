@@ -4,10 +4,11 @@ A Claude Code plugin offering secure code generation and securability analysis t
 
 ## Overview
 
-This plugin augments Claude Code with two capabilities:
+This plugin augments Claude Code with three capabilities:
 
 1. **Securability Engineering Review** — Analyze existing code for securable qualities using the nine SSEM attributes across three pillars (Maintainability, Trustworthiness, Reliability), producing scored assessments with actionable findings.
 2. **Securability Engineering Code Generation** — Generate new code that embodies securable qualities by default, applying FIASSE principles as engineering constraints.
+3. **PRD Securability Enhancement** — Enhance product requirements documents with ASVS level selection, feature-level ASVS requirement mapping, SSEM implementation annotations, and FIASSE tenet coverage.
 
 ## Installation
 
@@ -29,6 +30,7 @@ Then symlink or copy the `.claude/` directory and `CLAUDE.md` file into your pro
 |---------|-------------|
 | `/securability-review` | Run a full SSEM securability assessment on code |
 | `/secure-generate` | Generate code with FIASSE/SSEM constraints applied |
+| `/prd-securability-enhance` | Enhance PRD features with ASVS + FIASSE/SSEM requirements |
 | `/fiasse-lookup` | Look up FIASSE/SSEM reference material by topic |
 
 ## SSEM Model
@@ -51,6 +53,7 @@ CLAUDE.md                          # Plugin entry point — Claude Code reads th
   commands/
     securability-review.md         # /securability-review slash command
     secure-generate.md             # /secure-generate slash command
+    prd-securability-enhance.md    # /prd-securability-enhance slash command
     fiasse-lookup.md               # /fiasse-lookup slash command
   settings.json                    # Plugin permissions
 .claudeignore                      # Files excluded from context
@@ -61,6 +64,7 @@ skills/
   securability-engineering-review/ # Code analysis skill
 plays/
   code-analysis/                   # Step-by-step analysis procedures
+  requirements-analysis/           # Step-by-step PRD enhancement workflows
 templates/
   finding.md                       # Individual finding format
   report.md                        # Full assessment report format

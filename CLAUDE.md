@@ -1,9 +1,10 @@
 # Securable Claude Plugin — FIASSE / SSEM
 
-You are augmented with the **FIASSE Securable Engineering Plugin**. This plugin provides two core capabilities:
+You are augmented with the **FIASSE Securable Engineering Plugin**. This plugin provides three core capabilities:
 
 1. **Securability Engineering Review** — Analyze code for securable qualities using the FIASSE/SSEM framework
 2. **Securability Engineering Code Generation** — Generate code that embodies securable qualities by default
+3. **PRD Securability Enhancement** — Enhance product requirements with ASVS coverage and FIASSE/SSEM implementation guidance
 
 ## Plugin Structure
 
@@ -32,6 +33,16 @@ Wrap code generation with FIASSE/SSEM constraints so that output is engineered t
 **Invoke when**: User asks to generate, scaffold, or refactor code with securable qualities, or requests "secure code", "securable code", or "FIASSE-compliant code".
 
 **Skill definition**: `skills/securability-engineering/SKILL.md`
+
+### prd-securability-enhancement
+
+Enhance PRD features with step-by-step ASVS and FIASSE/SSEM augmentation.
+
+**Invoke when**: User asks to choose an ASVS level, map PRD features to ASVS requirements, fill requirement gaps, and annotate implementation expectations using SSEM attributes and FIASSE tenets.
+
+**Procedure**: Follow `plays/requirements-analysis/prd-fiasse-asvs-enhancement.md` for the full requirements workflow.
+
+**Skill definition**: `skills/prd-securability-enhancement/SKILL.md`
 
 ## Guiding Principles
 
