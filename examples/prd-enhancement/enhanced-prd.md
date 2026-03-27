@@ -32,6 +32,8 @@ Coverage legend:
 
 ### Feature F-01: User Sign-In
 
+**ASVS Mapping**: V2, V3
+
 **Updated Requirements**:
 
 - Enforce password policy and secure credential verification.
@@ -39,11 +41,11 @@ Coverage legend:
 - Issue short-lived session tokens with secure rotation on re-authentication.
 - Invalidate sessions on logout and high-risk account events.
 
-**ASVS Mapping**: V2, V3
-
-**SSEM / FIASSE Securability Notes**: Isolate authentication logic in a dedicated module with externalized credential policy (Modifiability, Analyzability). Never expose credential material in logs or error responses (Confidentiality, S2.6). Log sign-in outcomes with actor, source, and timestamp for auditability (Accountability). Session state is server-owned; clients cannot set privileged claims (Integrity, S2.4). Bounded backoff and lockout policies must avoid enabling denial-of-service amplification (Availability, S2.3). Rotating session controls and revocation paths ensure the design adapts as threats evolve (S2.1).
+**Securability Notes**: Isolate authentication logic in a dedicated module with externalized credential policy (Modifiability, Analyzability). Never expose credential material in logs or error responses (Confidentiality, S2.6). Log sign-in outcomes with actor, source, and timestamp for auditability (Accountability). Session state is server-owned; clients cannot set privileged claims (Integrity, S2.4). Bounded backoff and lockout policies must avoid enabling denial-of-service amplification (Availability, S2.3). Rotating session controls and revocation paths ensure the design adapts as threats evolve (S2.1).
 
 ### Feature F-02: Task CRUD API
+
+**ASVS Mapping**: V4, V9, V12
 
 **Updated Requirements**:
 
@@ -52,11 +54,11 @@ Coverage legend:
 - Apply API rate limiting and request size limits.
 - Return safe error messages without disclosing internals.
 
-**ASVS Mapping**: V4, V9, V12
-
-**SSEM / FIASSE Securability Notes**: CRUD handlers must be thin and delegate authorization to a centralized policy service (Modifiability, S2.4). Apply canonicalize-sanitize-validate at API boundaries before business logic (Integrity). Capture actor-to-resource change events for create/update/delete operations (Accountability, S2.6). Role-filter sensitive metadata in responses (Confidentiality). Timeout external dependencies and degrade gracefully for non-critical enrichments (Availability, S2.2). Object-level authorization directly reduces the likelihood of high-impact unauthorized access (S2.3).
+**Securability Notes**: CRUD handlers must be thin and delegate authorization to a centralized policy service (Modifiability, S2.4). Apply canonicalize-sanitize-validate at API boundaries before business logic (Integrity). Capture actor-to-resource change events for create/update/delete operations (Accountability, S2.6). Role-filter sensitive metadata in responses (Confidentiality). Timeout external dependencies and degrade gracefully for non-critical enrichments (Availability, S2.2). Object-level authorization directly reduces the likelihood of high-impact unauthorized access (S2.3).
 
 ### Feature F-03: File Attachments
+
+**ASVS Mapping**: V5, V8, V12
 
 **Updated Requirements**:
 
@@ -65,11 +67,11 @@ Coverage legend:
 - Store files in non-executable storage with randomized server-side object names.
 - Require authorization checks for every file retrieval request.
 
-**ASVS Mapping**: V5, V8, V12
-
-**SSEM / FIASSE Securability Notes**: Separate upload intake, scanning, storage, and retrieval into distinct components (Analyzability, Modifiability). File policy (allowed types, size, retention) must be configuration-driven (S2.4). Verify checksum/hash between upload, scan, and retrieval stages (Integrity). Quarantine suspect files and continue core task operations (Resilience, S2.3). Record upload, scan verdict, and download events for audit (Accountability, S2.6). Enforce least-privilege retrieval — no direct storage URLs to unauthorized users (Confidentiality). Isolate scanning workload to prevent upload queue starvation (Availability).
+**Securability Notes**: Separate upload intake, scanning, storage, and retrieval into distinct components (Analyzability, Modifiability). File policy (allowed types, size, retention) must be configuration-driven (S2.4). Verify checksum/hash between upload, scan, and retrieval stages (Integrity). Quarantine suspect files and continue core task operations (Resilience, S2.3). Record upload, scan verdict, and download events for audit (Accountability, S2.6). Enforce least-privilege retrieval — no direct storage URLs to unauthorized users (Confidentiality). Isolate scanning workload to prevent upload queue starvation (Availability).
 
 ### Feature F-04: Activity Feed
+
+**ASVS Mapping**: V4, V7
 
 **Updated Requirements**:
 
@@ -77,11 +79,11 @@ Coverage legend:
 - Security-relevant events (auth failures, permission denials, file quarantine events) must be logged.
 - Event payloads must exclude secrets and unnecessary sensitive fields.
 
-**ASVS Mapping**: V4, V7
-
-**SSEM / FIASSE Securability Notes**: Use an explicit event taxonomy with schema versioning; event producers write through a shared contract (Analyzability, Modifiability, S2.4). Redact sensitive fields before indexing and display (Confidentiality, S2.6). Accept events only from authenticated service emitters (Authenticity). Preserve append-only semantics for audit-quality history (Integrity). Queue-buffer event spikes and degrade feed freshness gracefully under load (Availability, Resilience, S2.2). Audit-quality records reduce investigation and recovery impact (S2.3).
+**Securability Notes**: Use an explicit event taxonomy with schema versioning; event producers write through a shared contract (Analyzability, Modifiability, S2.4). Redact sensitive fields before indexing and display (Confidentiality, S2.6). Accept events only from authenticated service emitters (Authenticity). Preserve append-only semantics for audit-quality history (Integrity). Queue-buffer event spikes and degrade feed freshness gracefully under load (Availability, Resilience, S2.2). Audit-quality records reduce investigation and recovery impact (S2.3).
 
 ### Feature F-05: Reminder Notifications
+
+**ASVS Mapping**: V10, V14
 
 **Updated Requirements**:
 
@@ -90,9 +92,7 @@ Coverage legend:
 - Add retry policy with backoff and dead-letter handling for failed deliveries.
 - Provide per-project opt-out with auditable preference changes.
 
-**ASVS Mapping**: V10, V14
-
-**SSEM / FIASSE Securability Notes**: Separate scheduling, delivery, and preference enforcement components (Modifiability). Abstract transport provider details behind a stable interface so providers can be swapped without code changes (S2.4). Log preference changes and delivery attempts with outcome codes (Accountability, S2.6). Notification content must not include unnecessary sensitive task details (Confidentiality). Queue-based dispatch protects user-facing APIs during provider outages (Availability, S2.2). Dead-letter and retry design reduces the impact of missed-notification scenarios (Resilience, S2.3).
+**Securability Notes**: Separate scheduling, delivery, and preference enforcement components (Modifiability). Abstract transport provider details behind a stable interface so providers can be swapped without code changes (S2.4). Log preference changes and delivery attempts with outcome codes (Accountability, S2.6). Notification content must not include unnecessary sensitive task details (Confidentiality). Queue-based dispatch protects user-facing APIs during provider outages (Availability, S2.2). Dead-letter and retry design reduces the impact of missed-notification scenarios (Resilience, S2.3).
 
 ## 4. Cross-Cutting Securability Requirements
 
