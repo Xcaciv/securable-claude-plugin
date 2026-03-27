@@ -21,14 +21,13 @@ Use this play when:
 
 ## Output
 
-Produce an enhanced PRD artifact with these sections:
+Produce a concise enhanced PRD artifact with these sections:
 
 - ASVS level decision and rationale
-- Feature inventory with ASVS mappings
-- Per-feature requirement augmentations (missing controls added)
-- Per-feature SSEM implementation notes
-- FIASSE tenet annotations applied iteratively across all features
-- Gap/assumption list and follow-up actions
+- Feature-ASVS coverage matrix (gap summary)
+- Per-feature updated requirements with compact securability notes
+- Cross-cutting securability requirements
+- Open gaps and assumptions
 
 ## Procedure
 
@@ -84,27 +83,16 @@ Coverage statuses:
 - **Missing**: requirement absent and must be added
 - **Not Applicable**: justified with short rationale
 
-### 4. Add SSEM Implementation Notation Per Feature
+### 4. Add Compact Securability Notes Per Feature
 
-For each feature, annotate implementation guidance across all nine SSEM attributes.
+For each feature, add a short **Securability Notes** paragraph that captures the most material SSEM and FIASSE considerations in plain language. Do not enumerate all nine SSEM attributes or all five FIASSE tenets individually. Instead, call out only the points that meaningfully shape implementation for that feature.
 
-Maintainability:
+Consider across SSEM pillars (Maintainability, Trustworthiness, Reliability) and FIASSE tenets (S2.1–S2.6) but surface only what matters:
 
-- **Analyzability**: naming clarity, bounded complexity, explicit trust boundary points
-- **Modifiability**: separation of concerns, centralized security controls, low coupling
-- **Testability**: test hooks, boundary-condition tests, security control test cases
-
-Trustworthiness:
-
-- **Confidentiality**: data classification, least-privilege access, data minimization
-- **Accountability**: auditable events, actor traceability, structured logs
-- **Authenticity**: identity proofing, token/session integrity, service identity validation
-
-Reliability:
-
-- **Availability**: timeouts, rate limits, graceful degradation expectations
-- **Integrity**: canonicalize/sanitize/validate at boundaries, server-owned state controls
-- **Resilience**: defensive error handling, recovery expectations, fault-tolerant behavior
+- Key trust-boundary or data-handling constraints
+- Required observability / audit expectations
+- Resilience or availability design drivers
+- Separation-of-concern or testability mandates
 
 Notation format per feature:
 
@@ -112,42 +100,14 @@ Notation format per feature:
 ### Feature F-01: [Title]
 
 **ASVS Mapping**: Vx.y.z, ...
-**SSEM Implementation Notes**:
-- Analyzability: ...
-- Modifiability: ...
-- Testability: ...
-- Confidentiality: ...
-- Accountability: ...
-- Authenticity: ...
-- Availability: ...
-- Integrity: ...
-- Resilience: ...
+
+**Updated Requirements**:
+- ...
+
+**Securability Notes**: Brief paragraph covering material SSEM and FIASSE points.
 ```
 
-### 5. Iterate FIASSE Foundational Tenets Across Each Feature
-
-Apply each tenet explicitly to each feature, one-by-one.
-
-For every feature, annotate:
-
-1. **S2.1 Securable Paradigm**: how the requirement avoids static "secure" assumptions.
-2. **S2.2 Resiliently Add Computing Value**: how value delivery remains robust under change/stress.
-3. **S2.3 Reduce Material Impact**: what requirement choices reduce probable business impact.
-4. **S2.4 Engineer vs Hacker Mindset**: which scalable engineering controls are mandated.
-5. **S2.6 Transparency**: what observability/auditability is required without overexposure.
-
-Use this compact notation:
-
-```markdown
-**FIASSE Tenet Annotations**:
-- S2.1: ...
-- S2.2: ...
-- S2.3: ...
-- S2.4: ...
-- S2.6: ...
-```
-
-### 6. Update Acceptance Criteria and NFRs
+### 5. Update Acceptance Criteria and NFRs
 
 For each feature, convert augmentations into explicit acceptance criteria and non-functional requirements:
 
@@ -156,14 +116,14 @@ For each feature, convert augmentations into explicit acceptance criteria and no
 - Boundary validation and failure behavior must be defined
 - Data handling constraints must be measurable
 
-### 7. Produce Final Enhanced PRD Sections
+### 6. Produce Final Enhanced PRD Sections
 
 Produce:
 
-1. **ASVS Level Decision** section
-2. **Feature-ASVS Coverage Matrix**
-3. **Enhanced Feature Specifications** (each with SSEM and FIASSE annotations)
-4. **Global Securability Requirements** (cross-cutting concerns)
+1. **ASVS Level Decision** — brief rationale
+2. **Feature-ASVS Coverage Matrix** — gap summary table
+3. **Enhanced Feature Specifications** — updated requirements + compact securability notes per feature
+4. **Cross-Cutting Securability Requirements** — shared controls
 5. **Open Gaps and Assumptions**
 
 ## Quality Checklist
@@ -171,8 +131,7 @@ Produce:
 - [ ] ASVS level selected before requirement mapping
 - [ ] Every feature mapped to applicable ASVS requirements
 - [ ] Missing/partial requirements converted into concrete PRD updates
-- [ ] All 9 SSEM attributes addressed per feature
-- [ ] All 5 FIASSE tenets (S2.1, S2.2, S2.3, S2.4, S2.6) annotated per feature
+- [ ] Material SSEM and FIASSE considerations captured per feature in compact securability notes
 - [ ] Acceptance criteria are testable and unambiguous
 - [ ] Trust boundaries and data handling expectations are explicit
 

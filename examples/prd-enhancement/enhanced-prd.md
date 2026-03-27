@@ -41,25 +41,7 @@ Coverage legend:
 
 **ASVS Mapping**: V2, V3
 
-**SSEM Implementation Notes**:
-
-- Analyzability: Authentication decision points must be isolated in a dedicated auth module.
-- Modifiability: Credential policy configuration must be externalized and versioned.
-- Testability: Provide deterministic auth test fixtures for success, failure, lockout, and rotation paths.
-- Confidentiality: Never expose credential material in logs or error responses.
-- Accountability: Log sign-in success/failure with actor, source, and timestamp.
-- Authenticity: Verify token signature and claims on every authenticated request.
-- Availability: Apply bounded backoff and lockout without enabling denial-of-service amplification.
-- Integrity: Server owns session state; client cannot set privileged claims.
-- Resilience: Define fallback behavior for auth provider latency/timeouts.
-
-**FIASSE Tenet Annotations**:
-
-- S2.1: Avoid static assumptions by requiring rotating session controls and revocation paths.
-- S2.2: Authentication remains reliable under stress through bounded retries and lockout policy.
-- S2.3: Limits credential abuse probability and account takeover impact.
-- S2.4: Uses scalable engineering controls (policy, rotation, audit) rather than ad hoc fixes.
-- S2.6: Requires transparent and structured sign-in telemetry for incident analysis.
+**SSEM / FIASSE Securability Notes**: Isolate authentication logic in a dedicated module with externalized credential policy (Modifiability, Analyzability). Never expose credential material in logs or error responses (Confidentiality, S2.6). Log sign-in outcomes with actor, source, and timestamp for auditability (Accountability). Session state is server-owned; clients cannot set privileged claims (Integrity, S2.4). Bounded backoff and lockout policies must avoid enabling denial-of-service amplification (Availability, S2.3). Rotating session controls and revocation paths ensure the design adapts as threats evolve (S2.1).
 
 ### Feature F-02: Task CRUD API
 
@@ -72,25 +54,7 @@ Coverage legend:
 
 **ASVS Mapping**: V4, V9, V12
 
-**SSEM Implementation Notes**:
-
-- Analyzability: CRUD handlers must be thin and delegate policy checks to named authorization services.
-- Modifiability: Access control policy and validation rules are centralized and reusable.
-- Testability: Include positive/negative tests for cross-project access attempts and malformed payloads.
-- Confidentiality: Task fields containing sensitive metadata must be role-filtered in responses.
-- Accountability: Capture actor-to-resource change events for create/update/delete.
-- Authenticity: API calls require verified identity context and trusted session state.
-- Availability: Timeout external dependencies and provide graceful degradation for non-critical enrichments.
-- Integrity: Apply canonicalize-sanitize-validate sequence before business logic execution.
-- Resilience: Handle partial downstream failures with idempotent retry-safe semantics where applicable.
-
-**FIASSE Tenet Annotations**:
-
-- S2.1: Validation and policy checks are designed for evolving threat patterns and schema updates.
-- S2.2: Controls preserve business value by protecting task correctness and authorized collaboration.
-- S2.3: Object-level authorization reduces likelihood of high-impact unauthorized data access.
-- S2.4: Emphasizes maintainable policy architecture over one-off endpoint patches.
-- S2.6: Structured API decision logging enables traceability and rapid diagnostics.
+**SSEM / FIASSE Securability Notes**: CRUD handlers must be thin and delegate authorization to a centralized policy service (Modifiability, S2.4). Apply canonicalize-sanitize-validate at API boundaries before business logic (Integrity). Capture actor-to-resource change events for create/update/delete operations (Accountability, S2.6). Role-filter sensitive metadata in responses (Confidentiality). Timeout external dependencies and degrade gracefully for non-critical enrichments (Availability, S2.2). Object-level authorization directly reduces the likelihood of high-impact unauthorized access (S2.3).
 
 ### Feature F-03: File Attachments
 
@@ -103,25 +67,7 @@ Coverage legend:
 
 **ASVS Mapping**: V5, V8, V12
 
-**SSEM Implementation Notes**:
-
-- Analyzability: Separate upload intake, scanning, storage, and retrieval paths.
-- Modifiability: File policy (types, size, retention) maintained as configuration not hardcoded branches.
-- Testability: Include test corpus for blocked types, oversized files, and malicious payload simulation.
-- Confidentiality: Enforce least-privilege retrieval and avoid direct storage URLs to unauthorized users.
-- Accountability: Record upload, scan verdict, and download access events.
-- Authenticity: Verify requester identity and resource ownership before download.
-- Availability: Isolate scanning workload to prevent upload queue starvation.
-- Integrity: Verify checksum/hashes between upload, scan, and retrieval stages.
-- Resilience: Quarantine suspect files and continue core task operations.
-
-**FIASSE Tenet Annotations**:
-
-- S2.1: File threat handling assumes evolving payload techniques.
-- S2.2: Safe attachment workflow preserves collaboration value under adversarial conditions.
-- S2.3: Quarantine and strict retrieval controls minimize breach and malware spread impact.
-- S2.4: Engineering pipeline (validate-scan-store-authorize) replaces fragile blacklist-only behavior.
-- S2.6: Scan and retrieval telemetry provides actionable visibility without exposing sensitive content.
+**SSEM / FIASSE Securability Notes**: Separate upload intake, scanning, storage, and retrieval into distinct components (Analyzability, Modifiability). File policy (allowed types, size, retention) must be configuration-driven (S2.4). Verify checksum/hash between upload, scan, and retrieval stages (Integrity). Quarantine suspect files and continue core task operations (Resilience, S2.3). Record upload, scan verdict, and download events for audit (Accountability, S2.6). Enforce least-privilege retrieval — no direct storage URLs to unauthorized users (Confidentiality). Isolate scanning workload to prevent upload queue starvation (Availability).
 
 ### Feature F-04: Activity Feed
 
@@ -133,25 +79,7 @@ Coverage legend:
 
 **ASVS Mapping**: V4, V7
 
-**SSEM Implementation Notes**:
-
-- Analyzability: Use explicit event taxonomy and schema versioning.
-- Modifiability: Event producers write through a shared event contract.
-- Testability: Validate feed redaction and authorization boundaries through integration tests.
-- Confidentiality: Redact sensitive fields before feed indexing and display.
-- Accountability: Ensure event origin, actor identity, and action context are preserved.
-- Authenticity: Accept feed events only from trusted, authenticated service emitters.
-- Availability: Apply queue buffering to handle event spikes.
-- Integrity: Preserve append-only semantics for audit-aligned event history.
-- Resilience: Degrade feed freshness gracefully if event processing is delayed.
-
-**FIASSE Tenet Annotations**:
-
-- S2.1: Event model supports iterative expansion as new risks and controls emerge.
-- S2.2: Feed remains useful while preserving strict visibility and redaction controls.
-- S2.3: Audit-quality event records reduce investigation and recovery impact.
-- S2.4: Uses engineering contracts and schemas, not ad hoc logging statements.
-- S2.6: Transparency is delivered through structured, authorized observability.
+**SSEM / FIASSE Securability Notes**: Use an explicit event taxonomy with schema versioning; event producers write through a shared contract (Analyzability, Modifiability, S2.4). Redact sensitive fields before indexing and display (Confidentiality, S2.6). Accept events only from authenticated service emitters (Authenticity). Preserve append-only semantics for audit-quality history (Integrity). Queue-buffer event spikes and degrade feed freshness gracefully under load (Availability, Resilience, S2.2). Audit-quality records reduce investigation and recovery impact (S2.3).
 
 ### Feature F-05: Reminder Notifications
 
@@ -164,25 +92,7 @@ Coverage legend:
 
 **ASVS Mapping**: V10, V14
 
-**SSEM Implementation Notes**:
-
-- Analyzability: Separate scheduling, delivery, and preference enforcement components.
-- Modifiability: Transport provider details are abstracted behind a stable interface.
-- Testability: Simulate provider failures and verify retry/dead-letter behavior.
-- Confidentiality: Notification content should not include unnecessary sensitive task details.
-- Accountability: Log preference changes and delivery attempts with outcome codes.
-- Authenticity: Validate trusted sender identity and signing configuration where supported.
-- Availability: Queue-based dispatch protects user-facing APIs during provider outages.
-- Integrity: Ensure message templates are versioned and tamper-evident.
-- Resilience: Continue task operations if notification subsystem is degraded.
-
-**FIASSE Tenet Annotations**:
-
-- S2.1: Delivery controls account for changing provider risks and operational conditions.
-- S2.2: Reliable reminders maintain business value despite dependency instability.
-- S2.3: Dead-letter and retry design reduces high-impact missed-notification scenarios.
-- S2.4: Robust messaging architecture replaces brittle direct-send logic.
-- S2.6: Delivery and preference audit events provide operational transparency.
+**SSEM / FIASSE Securability Notes**: Separate scheduling, delivery, and preference enforcement components (Modifiability). Abstract transport provider details behind a stable interface so providers can be swapped without code changes (S2.4). Log preference changes and delivery attempts with outcome codes (Accountability, S2.6). Notification content must not include unnecessary sensitive task details (Confidentiality). Queue-based dispatch protects user-facing APIs during provider outages (Availability, S2.2). Dead-letter and retry design reduces the impact of missed-notification scenarios (Resilience, S2.3).
 
 ## 4. Cross-Cutting Securability Requirements
 

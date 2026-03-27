@@ -28,35 +28,22 @@ Follow the complete workflow in `plays/requirements-analysis/prd-fiasse-asvs-enh
 
 4. **Close Requirement Gaps** — Mark coverage as Covered/Partial/Missing/Not Applicable, then add missing requirement statements to feature requirements.
 
-5. **Annotate with SSEM Attributes** — Add implementation notes for all 9 attributes:
-   - Maintainability: Analyzability, Modifiability, Testability
-   - Trustworthiness: Confidentiality, Accountability, Authenticity
-   - Reliability: Availability, Integrity, Resilience
+5. **Add Compact Securability Notes** — For each feature, write a brief paragraph capturing only the material SSEM and FIASSE considerations that shape implementation.
 
-6. **Apply FIASSE Tenets Iteratively** — For each feature, explicitly annotate S2.1, S2.2, S2.3, S2.4, and S2.6.
-
-7. **Emit Enhanced PRD Content** — Produce ASVS level decision, feature-ASVS matrix, updated feature specs, and cross-cutting securability requirements.
+6. **Emit Enhanced PRD Content** — Produce ASVS level decision, coverage matrix, updated feature specs with securability notes, cross-cutting requirements, and open gaps.
 
 ## Output
 
-Deliver enhanced PRD sections that include:
+Deliver a concise enhanced PRD that includes:
 - ASVS level selection and rationale
-- Per-feature ASVS requirement mapping
-- Requirement gap resolutions
-- Per-feature SSEM implementation notes (all 9 attributes)
-- Per-feature FIASSE tenet annotations (S2.1, S2.2, S2.3, S2.4, S2.6)
-- Updated acceptance criteria and NFRs
+- Feature-ASVS coverage matrix (gap summary)
+- Per-feature updated requirements with compact securability notes
+- Cross-cutting securability requirements
+- Open gaps and assumptions
 
 ## References
 
 - `plays/requirements-analysis/prd-fiasse-asvs-enhancement.md`
 - `data/asvs/README.md`
 - `data/asvs/V*.md`
-- `data/fiasse/S2.1.md`
-- `data/fiasse/S2.2.md`
-- `data/fiasse/S2.3.md`
-- `data/fiasse/S2.4.md`
-- `data/fiasse/S2.6.md`
-- `data/fiasse/S3.2.1.md`
-- `data/fiasse/S3.2.2.md`
-- `data/fiasse/S3.2.3.md`
+- `data/fiasse/S*.md`

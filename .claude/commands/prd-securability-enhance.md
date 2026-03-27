@@ -16,11 +16,9 @@ Use the built-in ASVS catalog for requirement mapping and `data/fiasse/` for SSE
 
 4. **Close Requirement Gaps** — Add explicit missing requirements and clarify partial coverage.
 
-5. **Annotate SSEM Implementation Expectations** — Add feature-level notes for all nine SSEM attributes.
+5. **Add Compact Securability Notes** — Write a brief paragraph per feature covering only the material SSEM and FIASSE points.
 
-6. **Apply FIASSE Tenets Iteratively** — For each feature, explicitly annotate S2.1, S2.2, S2.3, S2.4, and S2.6.
-
-7. **Produce Enhanced PRD Sections** — Output ASVS decision, coverage matrix, enhanced features, and cross-cutting securability requirements.
+6. **Produce Enhanced PRD Sections** — Output ASVS decision, coverage matrix (gap summary), enhanced features with securability notes, cross-cutting requirements, and open gaps.
 
 ## Arguments
 
