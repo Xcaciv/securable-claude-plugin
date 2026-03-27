@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(dir /b /s \"G:\\\\securable-claude-plugin\\\\securable-claude-plugin\")"
-    ]
-  }
-}
