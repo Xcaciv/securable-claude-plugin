@@ -41,11 +41,13 @@ Before generating any code, apply these FIASSE principles as engineering constra
 
 3. **Reducing Material Impact (S2.3)** — Aim to reduce the probability of material impact from cyber events. Favor pragmatic controls aligned with the code's context and exposure, not theoretical completeness.
 
-4. **Engineer, Don't Hack (S2.4)** — Generate engineering solutions, not exploit-aware patches. Build securely through quality attributes, not through adversarial thinking.
+4. **Derived Integrity** — Never implicitly trust or adopt unmanaged external context, such as client-supplied values for server-owned state. Always derive integrity by generating code that explicitly extracts only expected values from requests and never accepts client input directly for critical state or decisions.
 
 5. **Transparency (S2.6, S3.3.1)** — Generated code must be observable: meaningful naming, structured logging at trust boundaries, audit trails for security-sensitive actions, and health/performance instrumentation.
 
 6. **Dependency Hygiene for Trustworthiness and Reliability** — When selecting libraries, default to the latest stable release that is compatible with the target runtime and framework. Prefer packages with low known vulnerability exposure (CVEs/CWEs), active maintenance, and strong release quality signals. Minimize dependency count and transitive risk by avoiding unnecessary or abandoned packages.
+
+7. **Canonical Input Handling (S6.4.1)** — Apply the canonicalize → sanitize → validate pattern at every trust boundary. This includes normalizing input to a standard form, removing dangerous content, and enforcing strict validation rules before processing. Prefer very specific types and constrained enum values. Never use a value that has not been fully vetted.
 
 ## SSEM Attribute Enforcement
 
