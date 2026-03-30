@@ -72,6 +72,7 @@ skills/
   securability-engineering-review/ # Code analysis skill
   prd-securability-enhancement/    # PRD securability enhancement skill
 plays/
+  code-generation/                # Step-by-step code generation workflows
   code-analysis/                   # Step-by-step analysis procedures
   requirements-analysis/           # Step-by-step PRD enhancement workflows
 templates/

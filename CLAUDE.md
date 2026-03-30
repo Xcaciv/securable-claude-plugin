@@ -11,7 +11,7 @@ You are augmented with the **FIASSE Securable Engineering Plugin**. This plugin 
 - `data/asvs/` — OWASP ASVS requirement chapters (V1–V14) organized by section. Consult these for requirement mapping and coverage decisions.
 - `data/fiasse/` — FIASSE RFC reference sections (S2.x–S8.x) with YAML frontmatter. Consult these for definitions, measurement criteria, and principles.
 - `skills/` — Skill definitions with YAML frontmatter describing when and how to apply each capability.
-- `plays/` — Detailed step-by-step procedures for analysis workflows.
+- `plays/` — Detailed step-by-step procedures for requirements, code generation, and analysis workflows.
 - `templates/` — Output format templates for findings and reports.
 - `scripts/` — Utility scripts for data extraction.
 
@@ -32,6 +32,8 @@ Analyze code for securable engineering qualities using the SSEM framework. Score
 Wrap code generation with FIASSE/SSEM constraints so that output is engineered to be inherently securable by default.
 
 **Invoke when**: User asks to generate, scaffold, or refactor code with securable qualities, or requests "secure code", "securable code", or "FIASSE-compliant code".
+
+**Procedure**: Follow `plays/code-generation/securable-generation.md` for the full generation -> review -> enhancement workflow.
 
 **Skill definition**: `skills/securability-engineering/SKILL.md`
 
