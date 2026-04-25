@@ -6,7 +6,7 @@ FIASSE (Framework for Integrating Application Security into Software Engineering
 
 ## Source & License
 
-These files are derived from the [Xcaciv/securable_software_engineering](https://github.com/Xcaciv/securable_software_engineering) repository at tag `v1.0.4`. Licensed under [CC BY SA 4.0](https://creativecommons.org/licenses/by/4.0/).
+These files are derived from the [Xcaciv/securable_software_engineering](https://github.com/Xcaciv/securable_software_engineering) repository at tag `v1.0.4`. Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## File Format
 
