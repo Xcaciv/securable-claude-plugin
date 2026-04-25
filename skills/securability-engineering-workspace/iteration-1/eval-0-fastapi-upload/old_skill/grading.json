@@ -1,0 +1,66 @@
+{
+  "expectations": [
+    {
+      "text": "Endpoint requires authentication and uses the authenticated user's identity (server-side) to determine ownership \u2014 does not accept user_id from the client",
+      "passed": true,
+      "evidence": "Handler depends on `user: Annotated[AuthenticatedUser, Depends(get_current_user)]`; `get_current_user` verifies a bearer token via injected `TokenVerifier` and returns server-derived `subject_id`. Storage uses `subject_id=user.subject_id` (no client-supplied user id). Comment: 'Identity is taken from a verified bearer token... the request body cannot supply or override `subject_id` (Derived Integrity).'"
+    },
+    {
+      "text": "Uploaded file is validated by content type (e.g., allowlist of image/jpeg, image/png) AND size limit, both enforced server-side",
+      "passed": true,
+      "evidence": "`_ALLOWED_FORMATS` allowlists JPEG/PNG/WEBP and `pil_format not in _ALLOWED_FORMATS` rejects others. Size enforced via `_read_with_cap` (raises 413 when buffer exceeds `max_bytes`) AND a redundant check in `validate_and_canonicalize`: `if len(raw_bytes) > max_bytes: raise PhotoValidationError(...)`. Format detection is via PIL magic-byte verification, not the client-declared content-type."
+    },
+    {
+      "text": "Filename or storage key is canonicalized/derived server-side (UUID or hash) \u2014 not taken raw from the client",
+      "passed": true,
+      "evidence": "`_build_key` constructs key as `f\"{prefix}/{safe_subject}/{uuid.uuid4().hex}{extension}\"`; comment notes 'subject_id is from the verified token; uuid4 is server-generated. Neither value is influenced by client-supplied filenames.' Extension is taken from the canonical allowlist mapping, not the upload filename."
+    },
+    {
+      "text": "S3 client is dependency-injected (or otherwise mockable) rather than instantiated globally inside the handler",
+      "passed": true,
+      "evidence": "Handler depends on `store: Annotated[PhotoStore, Depends(_get_photo_store)]` where `PhotoStore` is a `Protocol`. `S3PhotoStore.__init__` accepts `s3_client=None` for injection, and `configure_photo_store` allows wiring/swapping the implementation. No boto3 client is created inside the request handler."
+    },
+    {
+      "text": "Specific exception handling \u2014 failures return appropriate HTTP status with no leakage of stack traces, secrets, or internal paths in the response body",
+      "passed": true,
+      "evidence": "Auth failures return generic 401 'Invalid or expired credentials.' Validation errors are caught as `PhotoValidationError` and returned as 400 with sanitized messages. Storage failures are caught and converted to a stable 502 'Could not store the uploaded photo. Please try again.' (the original exception is suppressed from the response). Oversize returns 413. No stack traces or internal paths exposed in detail strings."
+    },
+    {
+      "text": "Structured logging is emitted at security-relevant events (upload accepted, rejected, failed) including user identity and outcome",
+      "passed": true,
+      "evidence": "`audit()` helper emits structured records via logger.info with `extra={\"event\": ..., \"outcome\": ..., \"fields\": ...}`. The handler calls `audit('profile_photo.upload', outcome='accepted', subject_id=user.subject_id, ...)`, `outcome='rejected'`, and `outcome='storage_error'` covering all three security-relevant outcomes with subject id."
+    },
+    {
+      "text": "No secrets (AWS keys, etc.) hardcoded; configuration is sourced from env or a config object",
+      "passed": true,
+      "evidence": "`PhotoUploadSettings(BaseSettings)` with `env_prefix=\"PHOTO_\"` pulls all values (bucket, region, prefix, endpoint, timeouts, limits) from environment variables. boto3 client is constructed without explicit access keys, deferring to the AWS credential chain. No literal AWS keys appear in code."
+    },
+    {
+      "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+      "passed": true,
+      "evidence": "Document includes a 'Securability Notes' section with subsections: 'SSEM attributes actively enforced' (all nine attributes enumerated), 'ASVS coverage' (V2.1, V3, V5.1.1, V5.2.1, V5.2.2, V5.2.4, V5.2.6, V5.3.1, V5.3.2, V7, V8, V14, V12), 'Dependency selection rationale' with version pins (fastapi >=0.115,<0.116 etc.), and 'Trade-offs' (in-memory load, AV scanning deferred, quotas delegated). Trust-boundary discipline is documented in the handler docstring."
+    },
+    {
+      "text": "Resource limits are present: file size cap (e.g., MAX_BYTES) AND streaming/chunked read OR explicit memory bound rather than full-buffer-into-RAM",
+      "passed": true,
+      "evidence": "`_read_with_cap` reads in 64 KiB chunks (`chunk_size = 64 * 1024`) and raises HTTP 413 as soon as `len(buffer) > max_bytes`, providing both a cap and chunked reading. Additional bounds: `max_dimension`, `max_pixels` (decompression-bomb protection), and boto3 connect/read timeouts. The author also explicitly documents the trade-off that the buffer is held in memory up to the cap."
+    },
+    {
+      "text": "Function/handler stays small and focused; storage logic is separable from request handling",
+      "passed": true,
+      "evidence": "Handler `upload_profile_photo` delegates to `_read_with_cap`, `validate_and_canonicalize`, and `_persist`/`store.put`. Storage is encapsulated in a separate `app/photo_storage.py` module behind a `PhotoStore` Protocol; validation lives in `app/photo_validation.py`; auth in `app/auth.py`; config in `app/config.py`. Securability Notes confirm 'Each function is small (well under 30 LoC), single-purpose.'"
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 38955,
+    "duration_ms": 147984,
+    "total_duration_seconds": 147.98
+  }
+}

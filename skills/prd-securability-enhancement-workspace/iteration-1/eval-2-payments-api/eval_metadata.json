@@ -1,0 +1,19 @@
+{
+  "eval_id": 2,
+  "eval_name": "payments-api-high-assurance",
+  "prompt": "We're shipping v2 of our Merchant Payouts API. PCI in scope. I need this PRD upgraded with proper ASVS coverage and securability notes per feature. Don't be shy about flagging missing requirements — I'd rather over-correct now than discover gaps in a SOC 2 audit.",
+  "assertions": [
+    {"text": "Chosen ASVS level is 3, justified by payment volume / regulatory exposure / material impact"},
+    {"text": "Output contains a feature-to-ASVS coverage matrix as a markdown table"},
+    {"text": "Output covers all five features F-01 through F-05 with the prescribed per-feature shape"},
+    {"text": "F-03 (trigger payout) requires idempotency keys to prevent duplicate payouts on retry"},
+    {"text": "F-03 enforces server-side derivation/verification of amount and destination (Derived Integrity) — client cannot impersonate or alter trust-critical state"},
+    {"text": "F-05 (webhook) requires signed payloads with timing-safe signature verification and replay protection (timestamp / nonce)"},
+    {"text": "API authentication strength is specified (e.g., scoped API keys, rotation, TLS-only) across endpoints"},
+    {"text": "Output flags rate limiting and anti-abuse controls on payout endpoints"},
+    {"text": "Output flags comprehensive audit logging of payout state changes and admin actions"},
+    {"text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational"},
+    {"text": "Output includes a cross-cutting securability requirements section covering TLS, secrets, and observability"},
+    {"text": "Output includes an open gaps / assumptions section"}
+  ]
+}

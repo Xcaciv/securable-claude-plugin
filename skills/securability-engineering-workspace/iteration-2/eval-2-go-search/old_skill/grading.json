@@ -1,0 +1,66 @@
+{
+  "expectations": [
+    {
+      "text": "Database access uses parameterized queries with $1/$2/$3 placeholders \u2014 query, category, and limit values are NEVER concatenated or formatted into the SQL string",
+      "passed": true,
+      "evidence": "searchSQL is a const string using $1/$2/$3 placeholders; QueryContext is called with (searchSQL, params.likePattern, params.category, params.limit) \u2014 no concatenation or fmt.Sprintf into SQL."
+    },
+    {
+      "text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained",
+      "passed": true,
+      "evidence": "clampLimit enforces maxLimit=200 with defaultLimit=50 for non-positive inputs: 'case n > maxLimit: return maxLimit'."
+    },
+    {
+      "text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern",
+      "passed": true,
+      "evidence": "buildLikePattern uses strings.NewReplacer(`\\`, `\\\\`, `%`, `\\%`, `_`, `\\_`) and the SQL uses `ILIKE $1 ESCAPE '\\'` to honor the escape."
+    },
+    {
+      "text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error",
+      "passed": true,
+      "evidence": "validateInputs checks UTF-8 validity, caps query length at maxQueryLen=100, enforces allowedCategories allowlist, and returns ErrInvalidInput (sentinel, via errors.Join) on failure. clampLimit handles limit>0 contract by defaulting non-positive values."
+    },
+    {
+      "text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate",
+      "passed": true,
+      "evidence": "callCtx, cancel := context.WithTimeout(ctx, queryTimeout); defer cancel(); db.QueryContext(callCtx, searchSQL, ...) \u2014 derives from caller ctx."
+    },
+    {
+      "text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful",
+      "passed": true,
+      "evidence": "Errors wrapped via fmt.Errorf('inventory: query failed: %w', err) and 'inventory: row scan failed: %w'. ErrInvalidInput sentinel is defined and joined for validation failures; raw error text is logged via slog, not returned verbatim to caller."
+    },
+    {
+      "text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return",
+      "passed": true,
+      "evidence": "defer rows.Close() immediately after successful QueryContext; scanItems checks Scan err and rows.Err() after the loop."
+    },
+    {
+      "text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape",
+      "passed": true,
+      "evidence": "Concrete Item struct in inventory/model.go with typed fields (ID uuid.UUID, SKU, Name, Category string, PriceCents int64); return type is []Item."
+    },
+    {
+      "text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)",
+      "passed": true,
+      "evidence": "SearchInventory delegates to validateInputs, buildLikePattern, clampLimit, and scanItems; body of SearchInventory itself is ~20 lines of substantive logic, with separated helpers."
+    },
+    {
+      "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+      "passed": true,
+      "evidence": "'## Securability Notes' section includes Trust boundary handling (S6.3/S6.4), all nine SSEM attributes enumerated, ASVS references (V1.2.4, V2.2.1, V2.2.2, V15.3, V16.2, V16.5.1, V16.5.3), Dependency rationale (github.com/google/uuid@v1.6.0), and Trade-offs block."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 59196,
+    "duration_ms": 258608,
+    "total_duration_seconds": 258.61
+  }
+}

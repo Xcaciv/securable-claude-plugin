@@ -1,0 +1,17 @@
+{
+  "eval_id": 2,
+  "eval_name": "go-postgres-inventory-search",
+  "prompt": "Write a Go function called SearchInventory that takes (ctx, db, query, category, limit) and returns matching inventory rows from a PostgreSQL `items` table (columns: id uuid, sku text, name text, category text, price_cents int). The query string should match against name. Caller is an authenticated internal API handler.",
+  "assertions": [
+    {"text": "Database access uses parameterized queries with $1/$2/$3 placeholders — query, category, and limit values are NEVER concatenated or formatted into the SQL string"},
+    {"text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained"},
+    {"text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern"},
+    {"text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error"},
+    {"text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate"},
+    {"text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful"},
+    {"text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return"},
+    {"text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape"},
+    {"text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)"},
+    {"text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs"}
+  ]
+}

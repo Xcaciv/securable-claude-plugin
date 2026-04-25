@@ -1,0 +1,66 @@
+{
+  "expectations": [
+    {
+      "text": "Database access uses parameterized queries with $1/$2/$3 placeholders \u2014 query, category, and limit values are NEVER concatenated or formatted into the SQL string",
+      "passed": true,
+      "evidence": "searchSQL is a constant: 'WHERE name ILIKE $1 ESCAPE \\'\\\\\\' AND ($2::text IS NULL OR category = $2) ... LIMIT $3' and is invoked via db.QueryContext(ctx, searchSQL, pattern, categoryArg, effectiveLimit) \u2014 no fmt.Sprintf or string concatenation of user input into the SQL."
+    },
+    {
+      "text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained",
+      "passed": true,
+      "evidence": "clampLimit applies maxLimit=200 and defaultLimit=50: 'if limit <= 0 { return defaultLimit }; if limit > maxLimit { return maxLimit }'."
+    },
+    {
+      "text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern",
+      "passed": true,
+      "evidence": "escapeLikePattern uses strings.NewReplacer(`\\`, `\\\\`, `%`, `\\%`, `_`, `\\_`) and the SQL uses `ILIKE $1 ESCAPE '\\''` so % and _ in user input are treated as literals."
+    },
+    {
+      "text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error",
+      "passed": true,
+      "evidence": "canonicalizeQuery rejects empty, non-UTF-8, and length > 100; canonicalizeCategory enforces UTF-8 and length <= 64; clampLimit handles non-positive limits; failures return ErrInvalidQuery sentinel. (Category does not have an allowlist, but non-empty/length constraint is met; query length is bounded.)"
+    },
+    {
+      "text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate",
+      "passed": true,
+      "evidence": "rows, err := db.QueryContext(ctx, searchSQL, pattern, categoryArg, effectiveLimit) \u2014 ctx is passed through, and Querier interface only exposes QueryContext."
+    },
+    {
+      "text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful",
+      "passed": true,
+      "evidence": "DB errors wrapped: 'fmt.Errorf(\"inventory: query: %w\", err)' and 'fmt.Errorf(\"inventory: scan: %w\", err)'; ErrInvalidQuery sentinel is defined and returned for validation failures."
+    },
+    {
+      "text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return",
+      "passed": true,
+      "evidence": "'defer rows.Close()' immediately after successful QueryContext; scanItems checks Scan error per row and rows.Err() after the loop."
+    },
+    {
+      "text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape",
+      "passed": true,
+      "evidence": "type Item struct { ID uuid.UUID; SKU string; Name string; Category string; PriceCents int64 } \u2014 explicit typed struct returned as []Item."
+    },
+    {
+      "text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)",
+      "passed": true,
+      "evidence": "Code is split across three files (types.go, validate.go, search.go) with separate canonicalizeQuery, canonicalizeCategory, clampLimit, escapeLikePattern, scanItems helpers; SearchInventory body is roughly 30 lines of mostly straight-line orchestration."
+    },
+    {
+      "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+      "passed": true,
+      "evidence": "'## Securability Notes' section includes SSEM attributes (Integrity, Availability, Resilience, Confidentiality, Accountability, Analyzability, Modifiability, Testability, Authenticity), ASVS references (V5.2.x, V5.3.4, V8.1.1/V8.1.2, V11.x, V16.3.3/V16.3.4), Trust boundaries (Handler -> SearchInventory -> PostgreSQL -> caller), Dependencies (github.com/google/uuid v1.6.0, log/slog Go 1.21+), and Trade-offs/assumptions block."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 38912,
+    "duration_ms": 141872,
+    "total_duration_seconds": 141.87
+  }
+}

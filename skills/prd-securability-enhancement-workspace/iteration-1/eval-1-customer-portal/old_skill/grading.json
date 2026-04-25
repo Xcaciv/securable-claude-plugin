@@ -1,0 +1,76 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains an explicit ASVS level decision section with rationale",
+      "passed": true,
+      "evidence": "Section 1 'ASVS Level Decision' (lines 11-24) opens with 'Selected baseline: ASVS Level 2.' followed by an itemized rationale that explicitly explains why not L1 (insufficient for account recovery; no MFA, no breached-password checks, no lifetime-limited recovery tokens) and why not L3 (no in-system payments, no regulated data, general consumer base). Targeted L3 escalations (V6.3.7, V6.3.8) are also justified."
+    },
+    {
+      "text": "Chosen ASVS level is 2 (with optional escalations) - appropriate for B2C SaaS holding PII",
+      "passed": true,
+      "evidence": "Line 13: 'Selected baseline: ASVS Level 2.' Rationale (line 16) explicitly cites '~250k MAU' and 'PII for ~250k MAU - exactly the profile ASVS calls out for L2'. Targeted L3 escalations applied for V6.3.7 (notify on credential reset) and V6.3.8 (no enumeration), which is a reasonable B2C posture."
+    },
+    {
+      "text": "Output contains a feature-to-ASVS coverage matrix as a markdown table",
+      "passed": true,
+      "evidence": "Section 2 'Feature-ASVS Coverage Matrix' (lines 27-74) is a markdown table with columns: Feature | ASVS \u00a7 | Req ID | Lvl | Coverage | PRD Change Needed. Includes ~40 rows covering F-01, F-02, F-03, F-04, and 'All' (cross-cutting). Coverage status legend (C/P/M/N/A) is defined."
+    },
+    {
+      "text": "Output covers all four features F-01, F-02, F-03, and F-04 with the prescribed per-feature shape",
+      "passed": true,
+      "evidence": "Section 3 covers each of F-01 (lines 80-117), F-02 (lines 121-148), F-03 (lines 152-181), F-04 (lines 185-213). Each feature follows a consistent shape: User story (unchanged), ASVS Mapping, Updated Requirements (numbered), Acceptance Criteria (testable, IDed), and Securability Notes (mapping to SSEM attributes)."
+    },
+    {
+      "text": "F-01 (forgot password) requires identical response for valid and invalid emails to prevent account enumeration",
+      "passed": true,
+      "evidence": "F-01 Requirement 4 (line 91) titled 'Uniform response (no enumeration)' mandates HTTP 200 with generic message for any submitted email (registered, unregistered, malformed, locked) within bounded time envelope, with response-time variance <=50 ms enforced via async email send after constant-time response. AC-01.3 (line 110) verifies byte-identical response body and 95th-percentile timing delta <=50 ms across 100 trials."
+    },
+    {
+      "text": "F-01 reset tokens are specified as short-lived (minutes), single-use, and stored as a hash (or equivalent control)",
+      "passed": true,
+      "evidence": "F-01 Req 1 (line 88): CSPRNG, >=128 bits entropy, single-use, server-side bound. Req 2 (line 89): expire <=10 minutes. Req 3 (line 90): only hash persisted server-side (SHA-256 or stronger); plaintext exists only in email/URL. AC-01.1 verifies expiry; AC-01.2 verifies single-use with reuse-attempt logging."
+    },
+    {
+      "text": "F-01 and F-02 flows include rate limiting per email and/or per source IP",
+      "passed": true,
+      "evidence": "F-01 Req 5 (lines 92-95): three-layer rate limiting - per email (<=3/15min), per IP (<=10/15min), and global circuit-break. F-02 Req 5 (line 133): unlock issuance follows the same per-email and per-IP envelope as F-01. AC-01.4 and AC-02.6 verify enforcement."
+    },
+    {
+      "text": "F-03 recovery codes are required to be hashed at rest and invalidated on use",
+      "passed": true,
+      "evidence": "F-03 Req 2 (line 161): 'Codes MUST be hashed with an approved password-hashing algorithm (Argon2id preferred; bcrypt cost >=12 acceptable) using a per-code 32-bit (or larger) random salt. Plaintext codes are presented to the user once and never persisted plaintext server-side.' Req 4 (line 163): atomic single-use enforcement under transaction or compare-and-set. AC-03.2 verifies atomicity with 50 parallel submissions yielding exactly one success; AC-03.4 verifies no plaintext in any store."
+    },
+    {
+      "text": "F-04 support-agent bypass requires audit logging and identity verification controls (or dual control)",
+      "passed": true,
+      "evidence": "F-04 Req 1 (line 193): version-controlled identity verification script. Req 4 (line 196): two-channel confirmation requiring a second/supervisor agent (different identity) for combined password+MFA reset. Req 6 (line 198): audit trail with timestamp, agent_id, supervisor_id, ticket_id, action_type, target_user_id, source IP, outcome; >=1 year retention in immutable store. AC-04.4 verifies dual-agent commit; AC-04.5 verifies log emission to SIEM within 5 minutes."
+    },
+    {
+      "text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational",
+      "passed": true,
+      "evidence": "ACs across all features cite specific, verifiable observables: 'T+10min+1s returns generic invalid-token response' (AC-01.1), 'p95 timing delta <=50 ms' (AC-01.3), 'chi-squared randomness check at alpha=0.01' (AC-03.1), '50 parallel submissions yields exactly one success' (AC-03.2), 'database dump inspection reveals no plaintext codes' (AC-03.4), '403 response and authz log event' (AC-04.1), 'two distinct agent identities in audit log before commit' (AC-04.4), 'logs in SIEM within 5 minutes' (AC-04.5). Aspirational language ('must be secure') is absent."
+    },
+    {
+      "text": "Output includes a cross-cutting securability requirements section",
+      "passed": true,
+      "evidence": "Section 4 'Cross-Cutting Securability Requirements' (lines 217-268) with 8 subsections: 4.1 Anti-Automation & Rate Limiting, 4.2 Authentication-Pathway Consistency, 4.3 Transport & Cookie Security, 4.4 Data Classification & Privacy, 4.5 Security Logging, 4.6 Cryptographic Hygiene, 4.7 Email Delivery Integrity, 4.8 Latency Budget. Each cites specific ASVS sections and includes acceptance criteria where applicable (AC-X.1, AC-X.2)."
+    },
+    {
+      "text": "Output includes an open gaps / assumptions section",
+      "passed": true,
+      "evidence": "Section 5 'Open Gaps and Assumptions' (lines 272-299) lists 6 explicit Assumptions (A1-A6: existing logging/SIEM, KMS, SendGrid SPF/DKIM/DMARC config, classification register, support tooling roles, TOTP-based 2FA) and 7 Open Gaps (G1-G7: SMS channel, multi-user approval threshold, lockout-counter scope, enumeration vs UX trade-off, completely-lost-credentials path, adaptive risk signals, bot detection layer). Also revises original Acceptance section with three added measurable items."
+    }
+  ],
+  "summary": {
+    "passed": 12,
+    "failed": 0,
+    "total": 12,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 72170,
+    "duration_ms": 262601,
+    "total_duration_seconds": 262.6
+  }
+}

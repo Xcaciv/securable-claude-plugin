@@ -1,0 +1,59 @@
+{
+  "skill_name": "securability-engineering",
+  "evals": [
+    {
+      "id": 0,
+      "name": "fastapi-profile-photo-upload",
+      "prompt": "Write a Python FastAPI POST endpoint at /me/photo that lets a logged-in user upload a profile photo. Photos go to S3. Use whatever libraries make sense.",
+      "files": [],
+      "assertions": [
+        {"text": "Endpoint requires authentication and uses the authenticated user's identity (server-side) to determine ownership — does not accept user_id from the client"},
+        {"text": "Uploaded file is validated by content type (e.g., allowlist of image/jpeg, image/png) AND size limit, both enforced server-side"},
+        {"text": "Filename or storage key is canonicalized/derived server-side (UUID or hash) — not taken raw from the client"},
+        {"text": "S3 client is dependency-injected (or otherwise mockable) rather than instantiated globally inside the handler"},
+        {"text": "Specific exception handling — failures return appropriate HTTP status with no leakage of stack traces, secrets, or internal paths in the response body"},
+        {"text": "Structured logging is emitted at security-relevant events (upload accepted, rejected, failed) including user identity and outcome"},
+        {"text": "No secrets (AWS keys, etc.) hardcoded; configuration is sourced from env or a config object"},
+        {"text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs"},
+        {"text": "Resource limits are present: file size cap (e.g., MAX_BYTES) AND streaming/chunked read OR explicit memory bound rather than full-buffer-into-RAM"},
+        {"text": "Function/handler stays small and focused; storage logic is separable from request handling"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "express-jwt-auth-middleware",
+      "prompt": "I need an Express middleware in TypeScript that authenticates requests via a JWT in the Authorization header, attaches the user identity to req.user, and rejects bad tokens. The signing secret is in process.env.JWT_SECRET. Use HS256 for now.",
+      "files": [],
+      "assertions": [
+        {"text": "JWT verification uses an established library (e.g., jsonwebtoken) with the algorithm explicitly pinned to HS256 — does not accept algorithms from the token header (no 'alg: none' / algorithm-confusion vulnerability)"},
+        {"text": "The Authorization header is parsed defensively — handles missing header, malformed header, missing 'Bearer ' prefix, multiple spaces, and case variants without crashing"},
+        {"text": "Middleware emits 401 (or 403 where appropriate) with a generic message; the response body does not leak the underlying jwt.verify error string, the token, or any stack content"},
+        {"text": "Token contents (payload) are NEVER logged or echoed back to the client; logs use structured key/value with user identifier only after verification succeeds"},
+        {"text": "Verified-payload extraction is restricted to expected fields (e.g., sub/iss/exp); the middleware does not blindly attach the full decoded payload to req.user"},
+        {"text": "Process startup or initialization fails fast / logs an error if JWT_SECRET is missing or empty — middleware does not silently degrade to 'always allow' or 'always deny by accident'"},
+        {"text": "Type-safe shape: req.user (or augmented Request) has an explicit TypeScript type rather than 'any'"},
+        {"text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs"},
+        {"text": "Token replay/expiry handling is explicit (jwt.verify enforces exp; clock-skew tolerance is set or noted as a trade-off)"},
+        {"text": "Middleware is exported as a function factory or pure function so it is unit-testable without spinning up an Express app"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "go-postgres-inventory-search",
+      "prompt": "Write a Go function called SearchInventory that takes (ctx, db, query, category, limit) and returns matching inventory rows from a PostgreSQL `items` table (columns: id uuid, sku text, name text, category text, price_cents int). The query string should match against name. Caller is an authenticated internal API handler.",
+      "files": [],
+      "assertions": [
+        {"text": "Database access uses parameterized queries with $1/$2/$3 placeholders — query, category, and limit values are NEVER concatenated or formatted into the SQL string"},
+        {"text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained"},
+        {"text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern"},
+        {"text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error"},
+        {"text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate"},
+        {"text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful"},
+        {"text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return"},
+        {"text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape"},
+        {"text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)"},
+        {"text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs"}
+      ]
+    }
+  ]
+}

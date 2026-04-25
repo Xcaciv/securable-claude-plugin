@@ -1,0 +1,17 @@
+{
+  "eval_id": 1,
+  "eval_name": "express-jwt-auth-middleware",
+  "prompt": "I need an Express middleware in TypeScript that authenticates requests via a JWT in the Authorization header, attaches the user identity to req.user, and rejects bad tokens. The signing secret is in process.env.JWT_SECRET. Use HS256 for now.",
+  "assertions": [
+    {"text": "JWT verification uses an established library (e.g., jsonwebtoken) with the algorithm explicitly pinned to HS256 — does not accept algorithms from the token header (no 'alg: none' / algorithm-confusion vulnerability)"},
+    {"text": "The Authorization header is parsed defensively — handles missing header, malformed header, missing 'Bearer ' prefix, multiple spaces, and case variants without crashing"},
+    {"text": "Middleware emits 401 (or 403 where appropriate) with a generic message; the response body does not leak the underlying jwt.verify error string, the token, or any stack content"},
+    {"text": "Token contents (payload) are NEVER logged or echoed back to the client; logs use structured key/value with user identifier only after verification succeeds"},
+    {"text": "Verified-payload extraction is restricted to expected fields (e.g., sub/iss/exp); the middleware does not blindly attach the full decoded payload to req.user"},
+    {"text": "Process startup or initialization fails fast / logs an error if JWT_SECRET is missing or empty — middleware does not silently degrade to 'always allow' or 'always deny by accident'"},
+    {"text": "Type-safe shape: req.user (or augmented Request) has an explicit TypeScript type rather than 'any'"},
+    {"text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs"},
+    {"text": "Token replay/expiry handling is explicit (jwt.verify enforces exp; clock-skew tolerance is set or noted as a trade-off)"},
+    {"text": "Middleware is exported as a function factory or pure function so it is unit-testable without spinning up an Express app"}
+  ]
+}

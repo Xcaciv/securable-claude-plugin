@@ -1,0 +1,71 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains an explicit ASVS level decision section with rationale",
+      "passed": true,
+      "evidence": "Section 1 is titled 'ASVS Level Decision' (line 13) and contains an explicit 'Rationale' subsection (line 17) with bulleted rationale items including 'Why Level 1 is insufficient', 'Why Level 2 is the right baseline', 'Why selective Level 3', and 'Internal/SSO context' (lines 19-24). An 'Out-of-Scope ASVS Areas (with rationale)' subsection (line 26) further explains exclusions."
+    },
+    {
+      "text": "Chosen ASVS level is 2 (or escalates specific features to 2/3) \u2014 Level 1 alone is insufficient for personnel data",
+      "passed": true,
+      "evidence": "Line 15 explicitly states: 'Selected Baseline: ASVS Level 2 (with selective Level 3 controls on the bulk reassignment and CSV export flows).' The rationale explicitly explains why Level 1 is insufficient (line 19) and which two flows escalate to L3 (F-03 and F-04, lines 22-23)."
+    },
+    {
+      "text": "Output contains a feature-to-ASVS coverage matrix as a markdown table",
+      "passed": true,
+      "evidence": "Section 2 'Feature-ASVS Coverage Matrix' (line 34) contains a properly formatted markdown table (lines 36-66) with columns Feature, ASVS Section/Req, Level, Coverage, PRD Change Needed. Rows cover F-01, F-02, F-03, F-04, and ALL (cross-cutting) entries with explicit ASVS section IDs and coverage status."
+    },
+    {
+      "text": "Output covers all four features F-01, F-02, F-03, and F-04 with the prescribed per-feature shape",
+      "passed": false,
+      "evidence": "All four features F-01 (line 74), F-02 (line 104), F-03 (line 135), F-04 (line 167) are present in Section 3 'Enhanced Feature Specifications'. However, the per-feature shape does NOT match the prescribed shape \u2014 feature blocks contain Description, ASVS Mapping, Updated Requirements, Updated Acceptance Criteria, and Securability Notes, but lack explicit 'Actor', 'Data', and 'Trust Boundaries' sections required by the per-feature shape per expectation #5. Marked failed because the prescribed shape is incomplete."
+    },
+    {
+      "text": "Each feature block includes Actor, Data, Trust Boundaries, ASVS Mapping, Updated Requirements, Acceptance Criteria, and Securability Notes",
+      "passed": false,
+      "evidence": "Each feature block (F-01 lines 74-100, F-02 lines 104-131, F-03 lines 135-163, F-04 lines 167-198) includes 'Description', 'ASVS Mapping', 'Updated Requirements', 'Updated Acceptance Criteria', and 'Securability Notes' \u2014 but none of the four feature blocks have explicit 'Actor', 'Data', or 'Trust Boundaries' subsections. Some actor/data/boundary information is woven implicitly into Description and Securability Notes (e.g., F-01 line 100 mentions 'trust-boundary discipline (S2.6)'), but no feature block contains the three required labeled sections. Strict reading: failed."
+    },
+    {
+      "text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational ('must be secure')",
+      "passed": true,
+      "evidence": "Acceptance criteria across all four features are concrete and observable. Examples: F-01 line 93 'receives 403 and produces a logged authorization-failure event'; line 96 'No URL or browser history entry contains a raw employee ID'; line 97 'Network capture shows no plaintext HTTP'; line 98 'appears in the centralized log store within 60 seconds'. F-03 line 158 'A cell starting with `=` in source data appears in the CSV with the leading character neutralized'. F-04 line 192 'audit log... can be reconstructed end-to-end by operation_id and shows: actor, source, target, every affected review, timestamps, and outcome.' These specify exact test observables (HTTP status codes, log fields, latency bounds, content shape) rather than aspirational language."
+    },
+    {
+      "text": "F-03 (CSV export) flags audit logging of export events and access control on the export endpoint",
+      "passed": true,
+      "evidence": "F-03 R-03.1 (line 144) requires a dedicated 'hr.review.export' entitlement, deny-by-default \u2014 access control on the endpoint. R-03.2 (line 145) enforces server-constrained region scoping. R-03.7 (line 150) requires logging '...every export emits a structured event including who, when, region, row_count, fields_included, compensation_included (boolean), justification, and a correlation id.' Acceptance criterion line 156 also tests authorization with a logged event."
+    },
+    {
+      "text": "F-04 (bulk reassign) flags authorization checks for the privileged operation and audit logging of the action",
+      "passed": true,
+      "evidence": "F-04 R-04.1 (line 176) requires a dedicated 'hr.review.reassign.admin' role with deny-by-default. R-04.2 (line 177) requires step-up authentication. R-04.9 (line 184) explicitly requires audit events: 'reassign.bulk.start', per-review 'reassign.review', and 'reassign.bulk.complete' with operation_id, actor, source/target manager, review_id, UTC timestamp, and outcome. R-04.10 (line 185) requires append-only log forwarding."
+    },
+    {
+      "text": "F-02 (private HR notes) addresses access scoping so notes are not exposed to the employee or manager",
+      "passed": true,
+      "evidence": "F-02 R-02.1 (line 113) explicitly states: 'Only users with hr.commentary.write may create or edit notes; only users with hr.commentary.read may read them. Employees and managers MUST NOT receive this entitlement.' R-02.2 (line 114) adds that 'Commentary notes are excluded from any read endpoint accessible to non-HR roles, including any future self-service surface. Backend filtering (not UI hiding) enforces this (V8.3.1).' Acceptance line 125 tests response shape parity to prevent field-presence side channels."
+    },
+    {
+      "text": "Output includes a cross-cutting securability requirements section",
+      "passed": true,
+      "evidence": "Section 4 'Cross-Cutting Securability Requirements' (line 202) is a dedicated section explicitly stating 'These apply across all features and should be tracked once, not duplicated per feature.' It contains 8 subsections: 4.1 Identity/Session/Trust Boundary, 4.2 Authorization, 4.3 Data Classification and Protection, 4.4 Transport and Configuration, 4.5 Input Validation and Output Encoding, 4.6 Logging and Audit, 4.7 Error Handling and Resilience, 4.8 Cross-Cutting Securability Notes. Requirements are labeled X-IDP-*, X-AZ-*, X-DC-*, X-TR-*, X-CFG-*, X-IV-*, X-LOG-*, X-ER-*."
+    },
+    {
+      "text": "Output includes an open gaps / assumptions section",
+      "passed": true,
+      "evidence": "Section 7 'Open Gaps and Assumptions' (line 289) contains three subsections: 'Assumptions' (line 291) with A1-A4, 'Open Gaps Requiring Stakeholder Input' (line 298) with G1-G10 (retention windows, bulk-action upper bound, export caps, cross-region policy, justification content, undo window, privacy regulation scope, peer feedback attribution, threat-model review, logging budget), and 'Items Explicitly Marked Not Applicable' (line 311) with NA1-NA4."
+    }
+  ],
+  "summary": {
+    "passed": 9,
+    "failed": 2,
+    "total": 11,
+    "pass_rate": 0.8182,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 71695,
+    "duration_ms": 249917,
+    "total_duration_seconds": 249.92
+  }
+}

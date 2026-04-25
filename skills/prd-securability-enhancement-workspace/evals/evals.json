@@ -1,0 +1,64 @@
+{
+  "skill_name": "prd-securability-enhancement",
+  "evals": [
+    {
+      "id": 0,
+      "name": "internal-hr-tool-mixed-sensitivity",
+      "prompt": "I have a draft PRD for an internal HR tool that lets HR staff view employee performance reviews. The doc is attached. Can you enhance it with security requirements before we start building? It's internal-only behind SSO, but it does hold sensitive personnel data. I want a clear ASVS level call, gap analysis, and tightened acceptance criteria.",
+      "files": ["evals/inputs/hr-tool-prd.md"],
+      "assertions": [
+        {"text": "Output contains an explicit ASVS level decision section with rationale"},
+        {"text": "Chosen ASVS level is 2 (or escalates specific features to 2/3) — Level 1 alone is insufficient for personnel data"},
+        {"text": "Output contains a feature-to-ASVS coverage matrix as a markdown table"},
+        {"text": "Output covers all four features F-01, F-02, F-03, and F-04 with the prescribed per-feature shape"},
+        {"text": "Each feature block includes Actor, Data, Trust Boundaries, ASVS Mapping, Updated Requirements, Acceptance Criteria, and Securability Notes"},
+        {"text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational ('must be secure')"},
+        {"text": "F-03 (CSV export) flags audit logging of export events and access control on the export endpoint"},
+        {"text": "F-04 (bulk reassign) flags authorization checks for the privileged operation and audit logging of the action"},
+        {"text": "F-02 (private HR notes) addresses access scoping so notes are not exposed to the employee or manager"},
+        {"text": "Output includes a cross-cutting securability requirements section"},
+        {"text": "Output includes an open gaps / assumptions section"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "customer-portal-account-recovery",
+      "prompt": "Please security-review this account recovery PRD for our customer portal and add the missing security requirements. I want testable acceptance criteria, not vague 'must be secure' language. The doc is attached.",
+      "files": ["evals/inputs/customer-portal-prd.md"],
+      "assertions": [
+        {"text": "Output contains an explicit ASVS level decision section with rationale"},
+        {"text": "Chosen ASVS level is 2 (with optional escalations) — appropriate for B2C SaaS holding PII"},
+        {"text": "Output contains a feature-to-ASVS coverage matrix as a markdown table"},
+        {"text": "Output covers all four features F-01, F-02, F-03, and F-04 with the prescribed per-feature shape"},
+        {"text": "F-01 (forgot password) requires identical response for valid and invalid emails to prevent account enumeration"},
+        {"text": "F-01 reset tokens are specified as short-lived (minutes), single-use, and stored as a hash (or equivalent control)"},
+        {"text": "F-01 and F-02 flows include rate limiting per email and/or per source IP"},
+        {"text": "F-03 recovery codes are required to be hashed at rest and invalidated on use"},
+        {"text": "F-04 support-agent bypass requires audit logging and identity verification controls (or dual control)"},
+        {"text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational"},
+        {"text": "Output includes a cross-cutting securability requirements section"},
+        {"text": "Output includes an open gaps / assumptions section"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "payments-api-high-assurance",
+      "prompt": "We're shipping v2 of our Merchant Payouts API. PCI in scope. I need this PRD upgraded with proper ASVS coverage and securability notes per feature. Don't be shy about flagging missing requirements — I'd rather over-correct now than discover gaps in a SOC 2 audit.",
+      "files": ["evals/inputs/payment-api-prd.md"],
+      "assertions": [
+        {"text": "Chosen ASVS level is 3, justified by payment volume / regulatory exposure / material impact"},
+        {"text": "Output contains a feature-to-ASVS coverage matrix as a markdown table"},
+        {"text": "Output covers all five features F-01 through F-05 with the prescribed per-feature shape"},
+        {"text": "F-03 (trigger payout) requires idempotency keys to prevent duplicate payouts on retry"},
+        {"text": "F-03 enforces server-side derivation/verification of amount and destination (Derived Integrity) — client cannot impersonate or alter trust-critical state"},
+        {"text": "F-05 (webhook) requires signed payloads with timing-safe signature verification and replay protection (timestamp / nonce)"},
+        {"text": "API authentication strength is specified (e.g., scoped API keys, rotation, TLS-only) across endpoints"},
+        {"text": "Output flags rate limiting and anti-abuse controls on payout endpoints"},
+        {"text": "Output flags comprehensive audit logging of payout state changes and admin actions"},
+        {"text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational"},
+        {"text": "Output includes a cross-cutting securability requirements section covering TLS, secrets, and observability"},
+        {"text": "Output includes an open gaps / assumptions section"}
+      ]
+    }
+  ]
+}

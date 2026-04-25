@@ -1,0 +1,76 @@
+{
+  "expectations": [
+    {
+      "text": "Chosen ASVS level is 3, justified by payment volume / regulatory exposure / material impact",
+      "passed": true,
+      "evidence": "Section 1 'ASVS Level Decision' explicitly selects L3 as baseline. Rationale cites: ~$1.5B/year payout volume as a material-impact financial event; PCI-DSS in regulated zone; state money-transmitter regulations; SOC 2 audit pressure; bank-account-level blast radius (misdirected funds not clawed back); webhook attack surface. It also explicitly explains why L1 and L2 are insufficient (citing specific L3-only requirements like 4.1.5 per-message signing, 16.3.2 sensitive-data-access logging, 13.3.1/13.3.3 HSM-backed key management, 2.3.5 multi-user approval). All three justification axes (volume / regulatory / material impact) are clearly addressed."
+    },
+    {
+      "text": "Output contains a feature-to-ASVS coverage matrix as a markdown table",
+      "passed": true,
+      "evidence": "Section 2 'Feature-ASVS Coverage Matrix' is a proper markdown table with columns Feature | ASVS Section | Requirement | Level | Coverage | PRD Change Needed. ~30 rows including F-01 through F-05 plus 'All' rows for cross-cutting items. Each requirement is mapped to a specific ASVS chapter/section number and a Coverage status (Covered / Partial / Missing / N/A) plus the PRD change needed."
+    },
+    {
+      "text": "Output covers all five features F-01 through F-05 with the prescribed per-feature shape",
+      "passed": true,
+      "evidence": "Section 3 'Enhanced Feature Specifications' has all five features (F-01 List payouts, F-02 Get payout detail, F-03 Trigger on-demand payout, F-04 Update payout schedule, F-05 Webhook on payout state change). Each follows a consistent shape: Endpoint, Actor, Data touched, Trust boundaries crossed, ASVS Mapping, Updated Requirements (numbered), Acceptance Criteria (testable), Securability Notes (with SSEM attribute callouts). Shape is uniform across all five."
+    },
+    {
+      "text": "F-03 (trigger payout) requires idempotency keys to prevent duplicate payouts on retry",
+      "passed": true,
+      "evidence": "F-03 Updated Requirement #2 'Idempotency': 'idempotency_key MUST be required, validated as opaque string of bounded length, and de-duplicated for at least 24 hours. A replay of an identical request returns the original payout's response; a replay of a key with different body returns 409.' (2.3.1). The endpoint signature itself includes idempotency_key in the request body. Acceptance criterion explicitly tests: 'Replaying an identical signed request returns the same payout_id without creating a new payout (idempotency test).' Replay-with-different-body collision behavior (409) is also specified \u2014 a real-world correctness detail many PRDs miss."
+    },
+    {
+      "text": "F-03 enforces server-side derivation/verification of amount and destination (Derived Integrity) \u2014 client cannot impersonate or alter trust-critical state",
+      "passed": true,
+      "evidence": "F-03 Updated Requirement #4 mandates server-side BOLA on two objects: caller owns the source balance AND owns destination_bank_account_id AND that account is in 'verified' state. Requirement #5 'Originating-subject authorization' forbids god-mode service tokens for downstream calls. Requirement #7 enforces server-side per-merchant business-logic caps (daily/weekly/per-transaction) so the client cannot exceed limits by sending a higher amount. Requirement #9 enforces atomic balance debit / payout insert / ledger entry (integrity). Requirement #4 BOLA test is also asserted as an acceptance criterion. The Securability Notes explicitly call out Integrity (atomic updates and locking) and Authenticity (per-message signatures) as the dominant SSEM attributes for this flow."
+    },
+    {
+      "text": "F-05 (webhook) requires signed payloads with timing-safe signature verification and replay protection (timestamp / nonce)",
+      "passed": false,
+      "evidence": "F-05 Updated Requirement #4 mandates per-message signing with HMAC-SHA-256 (or Ed25519) over canonical timestamp + event_id + raw body, with key id in header for rotation. Requirement #5 mandates Timestamp header in signed string with 5-minute window, plus per-event event_id (>=128 bits CSPRNG) for receiver-side dedup. Acceptance criteria test tampered body fails verification and repeated event_id is treated as duplicate. HOWEVER: 'timing-safe' (constant-time) signature comparison is NOT explicitly required in the spec. The merchant-side verification guide (Requirement #10) is committed to but timing-safe compare guidance for receivers is not called out. This is the one gap against expectation #6."
+    },
+    {
+      "text": "API authentication strength is specified (e.g., scoped API keys, rotation, TLS-only) across endpoints",
+      "passed": true,
+      "evidence": "CC-02 'Authentication & authorization platform' specifies API keys are issued, stored hashed, scoped to a single merchant_id, scoped to a permission set (read, schedule-write, payout-initiate), and individually revocable. CC-01 mandates TLS 1.2+ only with no plaintext fallback and rejects rather than redirects HTTP for the API surface. CC-05 mandates HSM-backed vault storage and documented rotation schedules for all secrets including API-signing keys. F-03 escalates to per-message digital signatures plus step-up MFA over a threshold. F-04 forbids read-only keys from schedule-write. The per-feature ASVS Mapping references V6.1.1 documentation of auth strength."
+    },
+    {
+      "text": "Output flags rate limiting and anti-abuse controls on payout endpoints",
+      "passed": true,
+      "evidence": "F-01 Updated Requirement #7: 'Rate-limiting and anti-automation policy MUST be documented and enforced (e.g., per-key per-minute quota; lockout on signature/key failures with bounded backoff).' F-03 Updated Requirement #7 'Business-logic limits' enforces per-merchant daily/weekly/per-transaction caps server-side, with hits logged and surfaced as a distinct error code. F-04 Updated Requirement #7 mandates a scheduled-change rate limit (max N changes per merchant per day) to prevent griefing/oscillation. F-05 mandates circuit-break on repeated webhook delivery failures. Coverage matrix flags 6.1.1 anti-automation as Missing across F-01 and F-03."
+    },
+    {
+      "text": "Output flags comprehensive audit logging of payout state changes and admin actions",
+      "passed": true,
+      "evidence": "F-01 req 8/9 mandate structured access logs per request and sensitive-data-access audit (16.3.2 L3). F-02 req 6 requires one audit-log entry per detail view. F-03 req 13 requires every attempt (success and failure) log timestamp, merchant_id, key_id, idempotency_key, amount, masked destination, decision, signature-verification result, and outcome. F-04 req 5 requires audit log with before/after schedule values. F-05 req 9 logs every delivery attempt with target host, status, key_id, attempt, latency. CC-06 'Logging and audit' mandates logging inventory, append-only isolated log store, log injection encoding, and audit-grade events at L3. The Securability Notes for F-02 and F-03 explicitly call out Accountability (SSEM) and SOC 2 / PCI investigation needs."
+    },
+    {
+      "text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational",
+      "passed": true,
+      "evidence": "Each feature has concrete acceptance criteria with observables. Examples: F-01 'A payout owned by merchant B cannot be returned to merchant A under any combination of cursor, from, to (red-team test)'; 'Malformed from/to returns 400 with generic body; no stack trace; access log records the rejection.' F-02 'Probing for a known-good payout_id belonging to another merchant returns 404 with a body indistinguishable from a true not-found.' F-03 'Replaying an identical signed request returns the same payout_id without creating a new payout'; 'Two concurrent requests against the same balance result in exactly one debit (race test under load)'; 'A revoked key cannot initiate a payout 60 seconds after revocation.' F-04 'PUT with cadence: hourly returns 400 and a security-event log line.' F-05 'Registering http://10.0.0.5/x is rejected with 400; same for https://localhost, https://169.254.169.254 (cloud metadata), and https://attacker@evil.tld'; DNS-rebinding test harness; circuit-break after 5 consecutive 5xx triggers internal alert."
+    },
+    {
+      "text": "Output includes a cross-cutting securability requirements section covering TLS, secrets, and observability",
+      "passed": true,
+      "evidence": "Section 4 'Cross-Cutting Securability Requirements' has 11 numbered subsections: CC-01 Transport security (TLS 1.2+, no plaintext fallback, internal CA pinning, no auto-redirect for API endpoints); CC-02 AuthN/AuthZ platform; CC-03 Input validation; CC-04 Cryptographic agility; CC-05 Secret management (HSM-backed vault, no source/image baking, scanning, rotation schedules); CC-06 Logging and audit (inventory, structured fields, redaction, append-only isolated store, log injection encoding, audit-grade events); CC-07 Error handling; CC-08 Data classification; CC-09 Configuration hardening; CC-10 Multi-tenant isolation; CC-11 Securability quality gates (FIASSE/SSEM). All three required topics \u2014 TLS (CC-01), secrets (CC-05), observability/logging (CC-06) \u2014 are covered in dedicated subsections with specific ASVS citations."
+    },
+    {
+      "text": "Output includes an open gaps / assumptions section",
+      "passed": true,
+      "evidence": "Section 5 'Open Gaps and Assumptions' has both halves. 'Open gaps' (7 items): high-value approval threshold, idempotency window, webhook retry budget, signature algorithm choice, logging retention, authorization cache TTL, out-of-scope dependencies (bank-verification PRD, onboarding flow). 'Assumptions' (4 items): PCI-tokenization vendor scope, API key + signed request only (not OAuth2), logs ship to isolated SIEM, webhook signing keys are merchant-specific. Plus 'Ratified non-functional requirements (from original PRD, retained)' explicitly preserves the original p99 latency, 99.95% availability, and 60s webhook delivery targets."
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 1,
+    "total": 12,
+    "pass_rate": 0.9167,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 96378,
+    "duration_ms": 303309,
+    "total_duration_seconds": 303.31
+  }
+}

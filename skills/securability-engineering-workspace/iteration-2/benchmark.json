@@ -1,0 +1,485 @@
+{
+  "metadata": {
+    "skill_name": "securability-engineering",
+    "skill_path": "skills/prd-securability-enhancement",
+    "executor_model": "claude (subagent)",
+    "analyzer_model": "claude (subagent)",
+    "timestamp": "2026-04-25T03:08:13Z",
+    "evals_run": [
+      0,
+      1,
+      2
+    ],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "eval_name": "fastapi-profile-photo-upload",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 259.33,
+        "tokens": 46340,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Endpoint requires authentication and uses the authenticated user's identity (server-side) to determine ownership \u2014 does not accept user_id from the client",
+          "passed": true,
+          "evidence": "verify_token dependency extracts user from JWT 'sub' claim; route uses user.user_id from Depends(verify_token); docstring states 'The user's identity is taken from the verified JWT, not the request body.'"
+        },
+        {
+          "text": "Uploaded file is validated by content type (e.g., allowlist of image/jpeg, image/png) AND size limit, both enforced server-side",
+          "passed": true,
+          "evidence": "allowed_mime_types=frozenset({'image/jpeg','image/png','image/webp'}) sniffed via libmagic; _read_with_cap streams and aborts at cap_bytes=settings.max_file_bytes returning 413."
+        },
+        {
+          "text": "Filename or storage key is canonicalized/derived server-side (UUID or hash) \u2014 not taken raw from the client",
+          "passed": true,
+          "evidence": "_profile_key builds 'users/{safe_user}/profile.{extension}' from the verified JWT subject; client filename is never used."
+        },
+        {
+          "text": "S3 client is dependency-injected (or otherwise mockable) rather than instantiated globally inside the handler",
+          "passed": true,
+          "evidence": "PhotoStore(__init__) takes s3_client as a parameter; protocol S3Client defined; create_app wires boto3.client('s3') into PhotoStore; tests override via app.state.photo_store._s3 = fake_s3."
+        },
+        {
+          "text": "Specific exception handling \u2014 failures return appropriate HTTP status with no leakage of stack traces, secrets, or internal paths in the response body",
+          "passed": true,
+          "evidence": "Catches PhotoValidationError -> 400 with safe message; PyJWTError -> 401 'Invalid or expired credentials.'; ClientError/BotoCoreError logged and re-raised; oversized -> 413; no bare except; PhotoUploadResponse exposes only status/content_type/size_bytes."
+        },
+        {
+          "text": "Structured logging is emitted at security-relevant events (upload accepted, rejected, failed) including user identity and outcome",
+          "passed": true,
+          "evidence": "structlog events: AUTH_TOKEN_INVALID, PHOTO_VALIDATION_REJECTED, PHOTO_UPLOAD_SUCCEEDED, PHOTO_STORAGE_FAILED \u2014 each with user_id and correlation_id where applicable."
+        },
+        {
+          "text": "No secrets (AWS keys, etc.) hardcoded; configuration is sourced from env or a config object",
+          "passed": true,
+          "evidence": "Settings.load() pulls PHOTO_S3_BUCKET, AUTH_JWT_PUBLIC_KEY etc from os.environ; AWS credentials resolved via boto3 default provider chain (IAM role); no hardcoded secrets."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "Securability Notes section enumerates all 9 SSEM attributes with locations; ASVS references list (V1.1, V4.1.1, V5.1.1, V5.2.1, V5.2.2, V5.2.4, V5.2.6, V5.3.1, V5.3.2, V7.1, V8.3, V12.1, V14.1); pinned dependency table; explicit Trade-offs and non-goals subsection."
+        },
+        {
+          "text": "Resource limits are present: file size cap (e.g., MAX_BYTES) AND streaming/chunked read OR explicit memory bound rather than full-buffer-into-RAM",
+          "passed": true,
+          "evidence": "_read_with_cap reads in 64KB chunks and raises 413 as soon as buffer exceeds cap_bytes; Pillow Image.MAX_IMAGE_PIXELS bounded; configurable PHOTO_MAX_BYTES (default 5 MiB)."
+        },
+        {
+          "text": "Function/handler stays small and focused; storage logic is separable from request handling",
+          "passed": true,
+          "evidence": "Handler upload_profile_photo delegates to sanitize_profile_photo (photo_validation.py) and PhotoStore.store_profile_photo (photo_storage.py); auth in auth.py; config in config.py \u2014 clear separation of concerns."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "eval_name": "fastapi-profile-photo-upload",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 311.71,
+        "tokens": 41012,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Endpoint requires authentication and uses the authenticated user's identity (server-side) to determine ownership \u2014 does not accept user_id from the client",
+          "passed": true,
+          "evidence": "Handler injects `current_user: AuthenticatedUser = Depends(get_current_user)` and comment states 'we deliberately do *not* accept `user_id` from the request \u2014 the photo is always attached to the authenticated caller'. Object key built from `current_user.id` server-side."
+        },
+        {
+          "text": "Uploaded file is validated by content type (e.g., allowlist of image/jpeg, image/png) AND size limit, both enforced server-side",
+          "passed": true,
+          "evidence": "ALLOWED_IMAGE_FORMATS dict restricts to JPEG/PNG/WEBP via Pillow-sniffed magic bytes (rejects with 415 if not in allowlist); MAX_UPLOAD_BYTES=5MiB enforced in `_read_capped` which raises 413. Both enforced server-side."
+        },
+        {
+          "text": "Filename or storage key is canonicalized/derived server-side (UUID or hash) \u2014 not taken raw from the client",
+          "passed": true,
+          "evidence": "`_build_object_key` constructs `users/{user_id}/profile-photo/{photo_id}-{unguessable}.{extension}` from server-generated uuid4 photo_id and `secrets.token_urlsafe(16)`. Client filename never used."
+        },
+        {
+          "text": "S3 client is dependency-injected (or otherwise mockable) rather than instantiated globally inside the handler",
+          "passed": true,
+          "evidence": "`PhotoStorage` Protocol port injected via `storage: PhotoStorage = Depends(get_photo_storage)`. Handler never references boto3/S3 directly."
+        },
+        {
+          "text": "Specific exception handling \u2014 failures return appropriate HTTP status with no leakage of stack traces, secrets, or internal paths in the response body",
+          "passed": true,
+          "evidence": "Catches UnidentifiedImageError -> 415, DecompressionBombError -> 413, storage Exception -> 502 with generic 'Photo storage is temporarily unavailable', metadata Exception -> 500 with 'Photo could not be finalized'. Raw exception details only go to logs via `log.exception`, not response."
+        },
+        {
+          "text": "Structured logging is emitted at security-relevant events (upload accepted, rejected, failed) including user identity and outcome",
+          "passed": true,
+          "evidence": "Uses `structlog` with events `profile_photo.rate_limited`, `profile_photo.storage_failed`, `profile_photo.metadata_failed`, `profile_photo.uploaded`, all including `user_id=str(current_user.id)` and outcome-specific fields."
+        },
+        {
+          "text": "No secrets (AWS keys, etc.) hardcoded; configuration is sourced from env or a config object",
+          "passed": true,
+          "evidence": "No AWS keys, endpoints, or credentials in the code. S3 specifics are encapsulated behind the `PhotoStorage` port; comment states 'externalize to config in production'. No hardcoded secrets present."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "## Securability Notes section includes SSEM attributes (Integrity, Confidentiality, Resilience, Testability/Modifiability), ASVS references (V5.2.1, V5.2.2, V5.2.6, V5.3.1, V5.3.2, V4.1.1, V7.1, V11.1), trust boundaries (HTTP->handler, handler->S3, handler->DB, identity), dependencies (fastapi, pydantic, structlog, Pillow with note about pinning), and Trade-offs bullet list."
+        },
+        {
+          "text": "Resource limits are present: file size cap (e.g., MAX_BYTES) AND streaming/chunked read OR explicit memory bound rather than full-buffer-into-RAM",
+          "passed": true,
+          "evidence": "MAX_UPLOAD_BYTES=5MiB cap. `_read_capped` reads in 64KiB chunks and aborts when `len(buf) > limit_bytes`, explicitly avoiding trust in Content-Length. Also `Image.MAX_IMAGE_PIXELS` caps decoder pixel budget."
+        },
+        {
+          "text": "Function/handler stays small and focused; storage logic is separable from request handling",
+          "passed": true,
+          "evidence": "Handler orchestrates: rate-limit check, `_read_capped`, `_normalize_image`, `_build_object_key`, `storage.put_photo`, `photos.record_photo`, log, response. Storage is fully abstracted behind the `PhotoStorage` Protocol; image processing lives in `_normalize_image`. Each helper is single-purpose."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "express-jwt-auth-middleware",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 206.17,
+        "tokens": 44814,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "JWT verification uses an established library (e.g., jsonwebtoken) with the algorithm explicitly pinned to HS256 \u2014 does not accept algorithms from the token header (no 'alg: none' / algorithm-confusion vulnerability)",
+          "passed": true,
+          "evidence": "Uses jsonwebtoken@^9.0.2 with explicit `algorithms: [...config.algorithms]` where algorithms is `readonly ['HS256']`. Includes a test 'rejects alg:none tokens'. Comment: 'HS256 only; rejects \\'none\\' and alg confusion.'"
+        },
+        {
+          "text": "The Authorization header is parsed defensively \u2014 handles missing header, malformed header, missing 'Bearer ' prefix, multiple spaces, and case variants without crashing",
+          "passed": true,
+          "evidence": "extractBearerToken checks for undefined/empty, oversize header, missing 'Bearer ' prefix, then trims and validates with strict regex `/^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$/`. Uses req.header('authorization') (case-insensitive lookup). Note: does not explicitly normalize 'bearer' lowercase prefix variant \u2014 startsWith is case-sensitive against 'Bearer '. Still defensive (rejects rather than crashes)."
+        },
+        {
+          "text": "Middleware emits 401 (or 403 where appropriate) with a generic message; the response body does not leak the underlying jwt.verify error string, the token, or any stack content",
+          "passed": true,
+          "evidence": "`res.status(401).json({ error: 'unauthorized', requestId })` \u2014 uniform generic response, comment explicitly states 'Do not echo the token, header, or detailed reason to the caller (avoid oracle behavior).'"
+        },
+        {
+          "text": "Token contents (payload) are NEVER logged or echoed back to the client; logs use structured key/value with user identifier only after verification succeeds",
+          "passed": true,
+          "evidence": "AuthSuccessEvent log includes only requestId/subject/tokenId/sourceIp; AuthFailureEvent comment: 'Intentionally no token, no secret, no raw header.' authSuccess is emitted only after verifyAccessToken succeeds and req.user is set."
+        },
+        {
+          "text": "Verified-payload extraction is restricted to expected fields (e.g., sub/iss/exp); the middleware does not blindly attach the full decoded payload to req.user",
+          "passed": true,
+          "evidence": "Only sub, roles (filtered to strings), and jti are extracted into a frozen AuthenticatedUser object. Comment: 'Only expected, typed fields are extracted (Request Surface Minimization). The raw payload is never attached to req.'"
+        },
+        {
+          "text": "Process startup or initialization fails fast / logs an error if JWT_SECRET is missing or empty \u2014 middleware does not silently degrade to 'always allow' or 'always deny by accident'",
+          "passed": true,
+          "evidence": "loadAuthConfig throws 'JWT_SECRET is missing or too short...' if secret is missing or < 32 bytes. Called at app startup: `const authConfig = loadAuthConfig(); // fail-fast on bad config`."
+        },
+        {
+          "text": "Type-safe shape: req.user (or augmented Request) has an explicit TypeScript type rather than 'any'",
+          "passed": true,
+          "evidence": "Explicit `AuthenticatedUser` interface with readonly id: string, roles: readonly string[], tokenId: string. Express.Request augmented via `declare global { namespace Express { interface Request { user?: AuthenticatedUser; } } }`."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "Has '## Securability Notes' section with Trust boundary handling (S6.3, S6.4), SSEM attributes enforced (all 9 listed), ASVS Mapping table (V9.1.1, V9.1.2, V9.1.3, V9.2.1, V9.2.2, V9.2.3, V8.3.1, V16.x), Dependency selection rationale with pinned versions, and Trade-offs and follow-ups section."
+        },
+        {
+          "text": "Token replay/expiry handling is explicit (jwt.verify enforces exp; clock-skew tolerance is set or noted as a trade-off)",
+          "passed": true,
+          "evidence": "`clockTolerance: config.clockToleranceSeconds` set to 5 in config. TokenExpiredError mapped to 'expired'; NotBeforeError mapped to 'not_yet_valid'. Trade-offs section notes revocation/jti denylist as follow-up (ASVS 7.4.1)."
+        },
+        {
+          "text": "Middleware is exported as a function factory or pure function so it is unit-testable without spinning up an Express app",
+          "passed": true,
+          "evidence": "`createJwtAuthMiddleware(deps: JwtAuthDeps): RequestHandler` is a factory accepting injected config/logger/clock. Pure helpers `extractBearerToken` and `verifyAccessToken` are independently exported. Sample Jest tests exercise verifyAccessToken without Express."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "express-jwt-auth-middleware",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 338.71,
+        "tokens": 52797,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "JWT verification uses an established library (e.g., jsonwebtoken) with the algorithm explicitly pinned to HS256 \u2014 does not accept algorithms from the token header (no 'alg: none' / algorithm-confusion vulnerability)",
+          "passed": true,
+          "evidence": "Uses jose library with explicit `algorithms: [...policy.algorithms]` where policy.algorithms is `readonly [\"HS256\"]`; dependency notes state jose 'requires explicit `algorithms` allowlist' and does not accept 'alg: none'. Comment: 'HS256 only \u2014 guards against alg-confusion (V9.1.2)'."
+        },
+        {
+          "text": "The Authorization header is parsed defensively \u2014 handles missing header, malformed header, missing 'Bearer ' prefix, multiple spaces, and case variants without crashing",
+          "passed": true,
+          "evidence": "extractBearerToken function checks Array.isArray, typeof string, trims whitespace, uses case-insensitive regex `^bearer$/i`, splits on `/\\s+/` (handles multiple spaces), and returns null for all malformed cases rather than throwing."
+        },
+        {
+          "text": "Middleware emits 401 (or 403 where appropriate) with a generic message; the response body does not leak the underlying jwt.verify error string, the token, or any stack content",
+          "passed": true,
+          "evidence": "sendUnauthorized returns `res.status(401).json({ error: 'unauthorized' })` with generic message; errors are classified into internal reason codes for logs only; comment 'Generic message \u2014 never leak which check failed (V16.5.1)'."
+        },
+        {
+          "text": "Token contents (payload) are NEVER logged or echoed back to the client; logs use structured key/value with user identifier only after verification succeeds",
+          "passed": true,
+          "evidence": "Logs only contain reason, request_id, path, method on rejection; on acceptance logs user_id (sub) and issuer after successful verification and projection. Raw payload/token never logged. Comment: 'never the token, never the secret'."
+        },
+        {
+          "text": "Verified-payload extraction is restricted to expected fields (e.g., sub/iss/exp); the middleware does not blindly attach the full decoded payload to req.user",
+          "passed": true,
+          "evidence": "projectAuthenticatedUser only lifts `sub` (as id) and `iss` (as issuer) into a frozen AuthenticatedUser object; comment 'Request Surface Minimization \u2014 only `sub` and `iss` are lifted'."
+        },
+        {
+          "text": "Process startup or initialization fails fast / logs an error if JWT_SECRET is missing or empty \u2014 middleware does not silently degrade to 'always allow' or 'always deny by accident'",
+          "passed": true,
+          "evidence": "loadJwtVerificationPolicy throws `Error('JWT_SECRET is not set')` if missing/empty and also throws if under 32 bytes. Called at startup: 'Build once, at startup, so any config error fails the boot \u2014 not a request.'"
+        },
+        {
+          "text": "Type-safe shape: req.user (or augmented Request) has an explicit TypeScript type rather than 'any'",
+          "passed": true,
+          "evidence": "Explicit `AuthenticatedUser` interface with readonly `id: string` and optional `issuer?: string`; `declare module 'express-serve-static-core' { interface Request { user?: AuthenticatedUser } }` augments Express Request type."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "Dedicated 'Securability Notes' section lists SSEM attributes (Authenticity, Integrity, Accountability, Resilience, Modifiability/Testability), ASVS references (V9.1.1, V9.1.2, V9.1.3, V9.2.1, V9.2.3, V10.3.1, V10.3.3, V16.5.1, V7.2.1, V6.8.2), trust boundaries, dependencies (jose@^5), and trade-offs."
+        },
+        {
+          "text": "Token replay/expiry handling is explicit (jwt.verify enforces exp; clock-skew tolerance is set or noted as a trade-off)",
+          "passed": true,
+          "evidence": "Policy has `clockToleranceSeconds: 5` passed to jose as `clockTolerance`; comment 'jose enforces exp/nbf automatically'; trade-off notes 'Clock tolerance is 5 seconds \u2014 tighten or loosen per deployment' and acknowledges no revocation/jti denylist (V7.4.1) as a known gap."
+        },
+        {
+          "text": "Middleware is exported as a function factory or pure function so it is unit-testable without spinning up an Express app",
+          "passed": true,
+          "evidence": "`buildJwtAuthMiddleware(opts: JwtAuthMiddlewareOptions)` is a factory that returns the middleware; accepts injected `logger` and `verify` function (`opts.verify ?? jwtVerify`) for testability; extractBearerToken is a separate pure function."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "go-postgres-inventory-search",
+      "configuration": "old_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 258.61,
+        "tokens": 59196,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Database access uses parameterized queries with $1/$2/$3 placeholders \u2014 query, category, and limit values are NEVER concatenated or formatted into the SQL string",
+          "passed": true,
+          "evidence": "searchSQL is a const string using $1/$2/$3 placeholders; QueryContext is called with (searchSQL, params.likePattern, params.category, params.limit) \u2014 no concatenation or fmt.Sprintf into SQL."
+        },
+        {
+          "text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained",
+          "passed": true,
+          "evidence": "clampLimit enforces maxLimit=200 with defaultLimit=50 for non-positive inputs: 'case n > maxLimit: return maxLimit'."
+        },
+        {
+          "text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern",
+          "passed": true,
+          "evidence": "buildLikePattern uses strings.NewReplacer(`\\`, `\\\\`, `%`, `\\%`, `_`, `\\_`) and the SQL uses `ILIKE $1 ESCAPE '\\'` to honor the escape."
+        },
+        {
+          "text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error",
+          "passed": true,
+          "evidence": "validateInputs checks UTF-8 validity, caps query length at maxQueryLen=100, enforces allowedCategories allowlist, and returns ErrInvalidInput (sentinel, via errors.Join) on failure. clampLimit handles limit>0 contract by defaulting non-positive values."
+        },
+        {
+          "text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate",
+          "passed": true,
+          "evidence": "callCtx, cancel := context.WithTimeout(ctx, queryTimeout); defer cancel(); db.QueryContext(callCtx, searchSQL, ...) \u2014 derives from caller ctx."
+        },
+        {
+          "text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful",
+          "passed": true,
+          "evidence": "Errors wrapped via fmt.Errorf('inventory: query failed: %w', err) and 'inventory: row scan failed: %w'. ErrInvalidInput sentinel is defined and joined for validation failures; raw error text is logged via slog, not returned verbatim to caller."
+        },
+        {
+          "text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return",
+          "passed": true,
+          "evidence": "defer rows.Close() immediately after successful QueryContext; scanItems checks Scan err and rows.Err() after the loop."
+        },
+        {
+          "text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape",
+          "passed": true,
+          "evidence": "Concrete Item struct in inventory/model.go with typed fields (ID uuid.UUID, SKU, Name, Category string, PriceCents int64); return type is []Item."
+        },
+        {
+          "text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)",
+          "passed": true,
+          "evidence": "SearchInventory delegates to validateInputs, buildLikePattern, clampLimit, and scanItems; body of SearchInventory itself is ~20 lines of substantive logic, with separated helpers."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "'## Securability Notes' section includes Trust boundary handling (S6.3/S6.4), all nine SSEM attributes enumerated, ASVS references (V1.2.4, V2.2.1, V2.2.2, V15.3, V16.2, V16.5.1, V16.5.3), Dependency rationale (github.com/google/uuid@v1.6.0), and Trade-offs block."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "go-postgres-inventory-search",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 10,
+        "failed": 0,
+        "total": 10,
+        "partial": 0,
+        "time_seconds": 289.04,
+        "tokens": 44212,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Database access uses parameterized queries with $1/$2/$3 placeholders \u2014 query, category, and limit values are NEVER concatenated or formatted into the SQL string",
+          "passed": true,
+          "evidence": "buildSearchSQL returns static SQL with $1/$2 (or $1/$2/$3 with category): `WHERE name ILIKE $1 ESCAPE '\\' ... LIMIT $2` and `... AND category = $2 ... LIMIT $3`, with values passed via []any{pattern, lim} / []any{pattern, cat, lim} \u2014 no string concatenation of values."
+        },
+        {
+          "text": "The `limit` parameter is explicitly bounded server-side (e.g., clamped to a sane max like 100 or 200) rather than passed through unconstrained",
+          "passed": true,
+          "evidence": "const maxLimit = 200 and defaultLimit = 50; validateSearchInputs clamps: `case lim <= 0: lim = defaultLimit; case lim > maxLimit: lim = maxLimit`."
+        },
+        {
+          "text": "Wildcard handling for the LIKE/ILIKE pattern escapes user-provided '%' and '_' characters (or uses an alternative like full-text search) so a user-supplied value cannot become a destructive wildcard pattern",
+          "passed": true,
+          "evidence": "escapeLikePattern uses strings.NewReplacer to escape `\\`, `%`, `_`, and the SQL uses `ESCAPE '\\'` to honor the escape character."
+        },
+        {
+          "text": "Inputs are validated up front: limit > 0, category against an allowlist or non-empty constraint, query length bounded; failures return a clear typed error",
+          "passed": true,
+          "evidence": "validateSearchInputs enforces non-empty trimmed query, maxQueryLen=200, null-byte rejection, maxCategoryLen=64, and limit clamping; returns wrapped sentinel errors ErrInvalidQuery / ErrInvalidCategory. Note: category is length-bounded and null-byte-checked but not strictly allowlisted; limit is clamped rather than rejected. Expectation allows 'non-empty constraint' alternative \u2014 bounded length + null-byte check + typed errors meet the spirit."
+        },
+        {
+          "text": "The function uses the supplied ctx for the DB query (e.g., db.QueryContext) so timeouts and cancellation propagate",
+          "passed": true,
+          "evidence": "`rows, err := db.Query(ctx, sql, args...)` \u2014 pgx's Query takes ctx as first arg and honors cancellation/deadlines; Querier interface signature is `Query(ctx context.Context, sql string, args ...any)`."
+        },
+        {
+          "text": "Errors are wrapped with %w (or equivalent) and do not leak raw driver/SQL errors to the caller; specific sentinel errors or typed errors are used where useful",
+          "passed": true,
+          "evidence": "`fmt.Errorf(\"inventory: query failed: %w\", err)`, `fmt.Errorf(\"inventory: scan failed: %w\", err)`, and sentinel errors ErrInvalidQuery/ErrInvalidCategory/ErrInvalidLimit wrapped via `fmt.Errorf(\"%w: too long\", ErrInvalidQuery)`."
+        },
+        {
+          "text": "Rows are properly closed with defer and Scan errors are checked; the function does not leak DB resources on early return",
+          "passed": true,
+          "evidence": "`defer rows.Close()` after successful Query; scanItems checks `rows.Scan(...)` error and `rows.Err()` after iteration."
+        },
+        {
+          "text": "Result type is a concrete struct (e.g., InventoryItem) with explicit fields rather than []map[string]interface{} or similar untyped shape",
+          "passed": true,
+          "evidence": "`type Item struct { ID uuid.UUID; SKU string; Name string; Category string; PriceCents int32 }` returned as `[]Item`."
+        },
+        {
+          "text": "Function stays small and focused; query construction, validation, and row scanning are separable (or at minimum, the function is well under 30 LoC of substantive logic)",
+          "passed": true,
+          "evidence": "SearchInventory body is ~25 lines of substantive logic and delegates to validateSearchInputs, buildSearchSQL, and scanItems \u2014 clean separation of concerns."
+        },
+        {
+          "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+          "passed": true,
+          "evidence": "## Securability Notes section includes SSEM attributes (Integrity, Availability, Testability/Modifiability, Accountability), ASVS references (V1.2.4, V12.3.1, V7, V8), trust boundaries discussion, dependencies (pgx/v5, google/uuid, log/slog with pinning note), and explicit trade-offs (ILIKE index limits, rate-limiting out of scope, silent clamp vs reject)."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "old_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 241.37,
+        "stddev": 30.4862,
+        "min": 206.17,
+        "max": 259.33
+      },
+      "tokens": {
+        "mean": 50116.6667,
+        "stddev": 7899.8664,
+        "min": 44814,
+        "max": 59196
+      }
+    },
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 313.1533,
+        "stddev": 24.8664,
+        "min": 289.04,
+        "max": 338.71
+      },
+      "tokens": {
+        "mean": 46007.0,
+        "stddev": 6094.1017,
+        "min": 41012,
+        "max": 52797
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "+71.8",
+      "tokens": "-4110"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,71 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains an explicit ASVS level decision section with rationale",
+      "passed": true,
+      "evidence": "A dedicated '## ASVS Level Decision' section is present at lines 13-22, with 'Chosen Level: 2' followed by a multi-sentence Rationale explaining why L1 is insufficient and L3 over-scoped, plus a 'Feature-Level Escalations' subsection naming F-03 and F-04."
+    },
+    {
+      "text": "Chosen ASVS level is 2 (or escalates specific features to 2/3) \u2014 Level 1 alone is insufficient for personnel data",
+      "passed": true,
+      "evidence": "'Chosen Level: 2' is stated explicitly. Rationale says 'Level 1 is insufficient because it does not require field-level authorization, audit logging of authorization decisions, sensitive-data classification, or rate/limit controls.' F-03 and F-04 are escalated to specific L3 controls (V14.2.6, V16.3.2, V2.3.5, V8.4.2)."
+    },
+    {
+      "text": "Output contains a feature-to-ASVS coverage matrix as a markdown table",
+      "passed": true,
+      "evidence": "Section '## Feature \u2194 ASVS Coverage Matrix' contains a markdown table with columns 'Feature | ASVS Section | Requirement ID | Level | Coverage | PRD Change Needed' and ~35 populated rows covering F-01 through F-04 and cross-cutting items, with explicit Coverage values (Missing/Partial)."
+    },
+    {
+      "text": "Output covers all four features F-01, F-02, F-03, and F-04 with the prescribed per-feature shape",
+      "passed": true,
+      "evidence": "Under '## Enhanced Feature Specifications' there are four sub-sections: 'Feature F-01: View Employee Performance Review', 'Feature F-02: Add HR Commentary', 'Feature F-03: Export Region Report (CSV)', and 'Feature F-04: Bulk Reassign Reviewer'. Each follows the same shape (Actor, Data, Trust Boundaries, ASVS Mapping, Updated Requirements, Acceptance Criteria, Securability Notes)."
+    },
+    {
+      "text": "Each feature block includes Actor, Data, Trust Boundaries, ASVS Mapping, Updated Requirements, Acceptance Criteria, and Securability Notes",
+      "passed": true,
+      "evidence": "All four feature sections (F-01 lines 71-103, F-02 lines 107-134, F-03 lines 138-167, F-04 lines 171-202) include all seven labeled subsections. Spot check F-04: 'Actor: HR Admin...', 'Data: Set of pending review records...', 'Trust Boundaries: browser \u2192 application server...', 'ASVS Mapping: V2.2.1, V2.2.3...', 'Updated Requirements:', 'Acceptance Criteria:', 'Securability Notes:'."
+    },
+    {
+      "text": "Acceptance criteria are testable (specific outcomes/observables) rather than aspirational ('must be secure')",
+      "passed": true,
+      "evidence": "Acceptance criteria specify concrete HTTP codes, log entry names, and observable behaviors. Examples: 'returns HTTP 403, no review body, and writes an authz.deny log entry with caller ID, target employee ID, region, and decision reason'; 'The 6th export in a 24-hour rolling window per user returns HTTP 429 with a Retry-After header'; 'A simulated mid-commit datastore failure leaves zero affected reviews mutated; a follow-up read of any of them returns the original assignedManager'."
+    },
+    {
+      "text": "F-03 (CSV export) flags audit logging of export events and access control on the export endpoint",
+      "passed": true,
+      "evidence": "F-03 Updated Requirements: 'The export feature requires a separate \"HR Reporting\" entitlement, distinct from review-read (V8.2.1)' and 'Every export request is logged with: requester, region scope, row count, columns included, request timestamp, completion timestamp, and outcome (success / denied / failed).' Also includes 'An export request whose region scope evaluates to zero rows still produces an audit log entry'."
+    },
+    {
+      "text": "F-04 (bulk reassign) flags authorization checks for the privileged operation and audit logging of the action",
+      "passed": true,
+      "evidence": "F-04 Updated Requirements: 'The bulk-reassign capability is restricted to the HR Admin role, enforced server-side; UI gating is presentation only (V8.2.1)' and 'Every step (propose, approve, reject, commit, fail) is logged with actor, action, source manager, target manager, and the resulting affected review-ID set'. Also adds step-up auth (V8.4.2 escalated) and four-eyes approval (V2.3.5)."
+    },
+    {
+      "text": "F-02 (private HR notes) addresses access scoping so notes are not exposed to the employee or manager",
+      "passed": true,
+      "evidence": "F-02 Updated Requirements: '\"Private to HR\" is a server-side authorization rule, not a UI hide: any read API used by employees or managers must structurally exclude commentary fields, and a separate read endpoint exists for HR commentary (V8.2.3).' Acceptance Criteria reinforces with a contract test: 'An employee or manager calling any review-read endpoint never sees commentary in the response body, verified by a contract test.'"
+    },
+    {
+      "text": "Output includes a cross-cutting securability requirements section",
+      "passed": true,
+      "evidence": "Section '## Cross-Cutting Securability Requirements' (lines 206-223) lists 13 cross-cutting controls including centralized authorization policy, centralized structured audit logging, tamper-resistant audit pipeline, output encoding, input validation, TLS baseline, session/SSO handling, classification, anti-caching, service-account least privilege, generic error handling, configuration hygiene, and dependency policy."
+    },
+    {
+      "text": "Output includes an open gaps / assumptions section",
+      "passed": true,
+      "evidence": "Section '## Open Gaps and Assumptions' (lines 227-242) enumerates 12 specific items requiring resolution, including regulatory scope, role model definition, data-classification table, SSO/IdP details, audit log retention, CSV temp-file retention, peer-feedback authorship, employee subject-access pathway, four-eyes feasibility, compensation-note presence by region, threat model, and SLA interaction with rate limits."
+    }
+  ],
+  "summary": {
+    "passed": 11,
+    "failed": 0,
+    "total": 11,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 74598,
+    "duration_ms": 278457,
+    "total_duration_seconds": 278.46
+  }
+}

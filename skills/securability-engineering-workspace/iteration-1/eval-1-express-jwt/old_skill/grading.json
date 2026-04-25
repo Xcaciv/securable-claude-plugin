@@ -1,0 +1,66 @@
+{
+  "expectations": [
+    {
+      "text": "JWT verification uses an established library (e.g., jsonwebtoken) with the algorithm explicitly pinned to HS256 \u2014 does not accept algorithms from the token header (no 'alg: none' / algorithm-confusion vulnerability)",
+      "passed": true,
+      "evidence": "Uses jsonwebtoken v9.0.2 with explicit algorithm allowlist: `const algorithms = (config.algorithms && config.algorithms.length > 0 ? config.algorithms : (['HS256'] as const))` passed into VerifyOptions; comment explicitly notes 'Algorithm allowlist pinned to HS256 (no \"none\", no algorithm confusion). [ASVS 9.1.2]'."
+    },
+    {
+      "text": "The Authorization header is parsed defensively \u2014 handles missing header, malformed header, missing 'Bearer ' prefix, multiple spaces, and case variants without crashing",
+      "passed": true,
+      "evidence": "extractBearerToken checks typeof string, empty length, oversized (>8192), length <= prefix, case-insensitive scheme comparison (`scheme.toLowerCase() !== BEARER_PREFIX.toLowerCase()`), trims token, and verifies three-segment structure (`token.split('.').length !== 3`). Returns undefined on every failure path."
+    },
+    {
+      "text": "Middleware emits 401 (or 403 where appropriate) with a generic message; the response body does not leak the underlying jwt.verify error string, the token, or any stack content",
+      "passed": true,
+      "evidence": "reject(res) sends uniform `res.status(401).json({ error: 'unauthorized' })` with WWW-Authenticate header; comment states 'A single, opaque body keeps the failure surface uniform regardless of root cause. Detailed reasons live in the structured log, not the wire.' Error details (err.message) go only to the logger, never the response."
+    },
+    {
+      "text": "Token contents (payload) are NEVER logged or echoed back to the client; logs use structured key/value with user identifier only after verification succeeds",
+      "passed": true,
+      "evidence": "AuthLogEvent interface restricts fields to event code, requestId, sub (optional), and reason (short code). Success log: `logger.info({ event: 'auth.token.accepted', requestId, sub: user.sub })` \u2014 only emitted after verification and shaping; no payload is ever logged. Comment: 'Token, header value, secret, and stack traces are NEVER logged.'"
+    },
+    {
+      "text": "Verified-payload extraction is restricted to expected fields (e.g., sub/iss/exp); the middleware does not blindly attach the full decoded payload to req.user",
+      "passed": true,
+      "evidence": "shapeUserFromPayload copies only `sub` (validated as non-empty string \u2264255 chars) and optional `roles` (validated as string array, frozen). Returned object is Object.freeze'd. Comment: 'Only known fields are copied; unknown claims are intentionally dropped so they cannot influence downstream logic by accident.'"
+    },
+    {
+      "text": "Process startup or initialization fails fast / logs an error if JWT_SECRET is missing or empty \u2014 middleware does not silently degrade to 'always allow' or 'always deny by accident'",
+      "passed": true,
+      "evidence": "createJwtAuthMiddlewareFromEnv throws `new Error('JWT_SECRET environment variable is not set.')` when secret is falsy; assertSecretStrength throws if missing or <32 bytes: 'Throwing at startup is intentional: a weak/missing secret is a deploy-time bug, not a runtime condition to be papered over.'"
+    },
+    {
+      "text": "Type-safe shape: req.user (or augmented Request) has an explicit TypeScript type rather than 'any'",
+      "passed": true,
+      "evidence": "src/types/express.d.ts declares `namespace Express { interface Request { user?: AuthenticatedUser } }` where AuthenticatedUser is a readonly interface with `sub: string` and optional `roles: readonly string[]`. No `any` used in the req.user augmentation."
+    },
+    {
+      "text": "Output includes a Securability Notes block listing SSEM attributes enforced, ASVS references, trust boundaries, dependencies with versions, and trade-offs",
+      "passed": true,
+      "evidence": "Dedicated 'Securability Notes' section covers all nine SSEM attributes (Analyzability, Modifiability, Testability, Confidentiality, Accountability, Authenticity, Availability, Integrity, Resilience), an ASVS 5.0 coverage table (9.1.1, 9.1.2, 9.1.3, 9.2.1, 9.2.3, 10.3.1, 7.1.x, 14.1.1), Dependency-selection rationale with pinned versions (jsonwebtoken 9.0.2, express 4.21.2), trust boundary calls (Authorization header), and a 'Trade-offs and follow-ups' subsection."
+    },
+    {
+      "text": "Token replay/expiry handling is explicit (jwt.verify enforces exp; clock-skew tolerance is set or noted as a trade-off)",
+      "passed": true,
+      "evidence": "VerifyOptions sets `clockTolerance: config.clockToleranceSeconds ?? 0`; TokenExpiredError and NotBeforeError are caught and logged distinctly. Trade-offs section notes: 'No revocation list. Self-contained tokens remain valid until exp. If immediate revocation is needed (per ASVS 7.4.1), add a jti claim and a deny-list lookup inside the verifier seam.'"
+    },
+    {
+      "text": "Middleware is exported as a function factory or pure function so it is unit-testable without spinning up an Express app",
+      "passed": true,
+      "evidence": "`export function createJwtAuthMiddleware(config: JwtAuthConfig): RequestHandler` is a factory that accepts injectable `verifier` and `logger`. Comment: 'The factory pattern keeps the middleware pure (config in, handler out)... makes the middleware trivially unit-testable.' Tests can pass stub verifier and capturing logger per Testability notes."
+    }
+  ],
+  "summary": {
+    "passed": 10,
+    "failed": 0,
+    "total": 10,
+    "pass_rate": 1.0,
+    "partial": 0
+  },
+  "timing": {
+    "total_tokens": 49384,
+    "duration_ms": 175343,
+    "total_duration_seconds": 175.34
+  }
+}
