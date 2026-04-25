@@ -65,14 +65,16 @@ CLAUDE.md                          # Plugin entry point — Claude Code reads th
     fiasse-lookup.md               # /fiasse-lookup slash command
   settings.json                    # Plugin permissions
 .claudeignore                      # Files excluded from context
+.gitignore                         # Excludes test run artifacts (iteration-*/) from VCS
 data/
+  asvs/                            # OWASP ASVS 5.0 requirement chapters (V1–V17)
   fiasse/                          # FIASSE RFC reference sections (S2.x–S8.x)
 skills/
   securability-engineering/        # Code generation wrapper skill
   securability-engineering-review/ # Code analysis skill
   prd-securability-enhancement/    # PRD securability enhancement skill
 plays/
-  code-generation/                # Step-by-step code generation workflows
+  code-generation/                 # Step-by-step code generation workflows
   code-analysis/                   # Step-by-step analysis procedures
   requirements-analysis/           # Step-by-step PRD enhancement workflows
 templates/
@@ -84,7 +86,44 @@ scripts/
   extract_fiasse_sections.py       # Utility to extract sections from FIASSE RFC
 examples/
   prd-enhancement/                 # Before/after PRD securability enhancement example
+tests/                             # Skill regression tests (see Testing below)
+  run_tests.py                     # Claude Code CLI test runner
+  README.md                        # Test workspace conventions
+  prd-securability-enhancement-workspace/
+  securability-engineering-workspace/
+  securability-engineering-review-workspace/
 ```
+
+## Testing
+
+Each skill has a regression workspace under [`tests/`](tests/) that exercises it
+on three realistic prompts and grades the output via LLM-as-judge against an
+asserted expectation set. Workspaces share a common shape:
+
+```text
+tests/<skill>-workspace/
+  evals/
+    evals.json            # prompts + assertions for each eval
+    inputs/               # input fixtures (PRDs / source files)
+  skill-snapshot/         # frozen pre-optimization SKILL.md (the baseline)
+  iteration-N/            # generated outputs (gitignored)
+```
+
+To run a workspace end-to-end against the live skill plus the snapshot
+baseline, with grading:
+
+```bash
+# Requires the `claude` CLI on PATH and Python 3.9+
+python tests/run_tests.py tests/securability-engineering-workspace --grade
+
+# Just the live skill, just one eval
+python tests/run_tests.py tests/securability-engineering-review-workspace \
+    --config with_skill --eval-id 1 --grade
+```
+
+See [`tests/README.md`](tests/README.md) for full conventions, the per-iteration
+output layout, and how the runner integrates with the skill-creator
+aggregator and viewer.
 
 ## References
 
