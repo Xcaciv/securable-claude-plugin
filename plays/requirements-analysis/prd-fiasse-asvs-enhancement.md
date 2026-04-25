@@ -85,14 +85,16 @@ Coverage statuses:
 
 ### 4. Add Compact Securability Notes Per Feature
 
-For each feature, add a short **Securability Notes** paragraph that captures the most material SSEM and FIASSE considerations in plain language. Do not enumerate all nine SSEM attributes or all five FIASSE tenets individually. Instead, call out only the points that meaningfully shape implementation for that feature.
+For each feature, add a short **Securability Notes** paragraph that captures the most material SSEM and FIASSE considerations in plain language. Do not enumerate all ten SSEM attributes (FIASSE v1.0.4) or all six foundational principles individually. Instead, call out only the points that meaningfully shape implementation for that feature.
 
-Consider across SSEM pillars (Maintainability, Trustworthiness, Reliability) and FIASSE tenets (S2.1–S2.6) but surface only what matters:
+Consider across SSEM pillars (Maintainability, Trustworthiness, Reliability) and FIASSE foundational principles (S2.1–S2.6, including Transparency S2.5 and Least Astonishment S2.6) but surface only what matters:
 
-- Key trust-boundary or data-handling constraints
-- Required observability / audit expectations
-- Resilience or availability design drivers
+- Key trust-boundary or data-handling constraints (S4.3 Boundary Control, S4.4 Resilient Coding)
+- Required observability / audit expectations (S2.5 Transparency, S3.2.1.4 Observability)
+- Derived integrity for server-owned state (S4.4.1.2)
+- Resilience or availability design drivers (graceful and secure failure)
 - Separation-of-concern or testability mandates
+- Dependency stewardship for third-party code (S4.6)
 
 Notation format per feature:
 
@@ -139,11 +141,12 @@ Produce:
 
 - `data/asvs/README.md`
 - `data/asvs/V*.md`
-- `data/fiasse/S2.1.md`
-- `data/fiasse/S2.2.md`
-- `data/fiasse/S2.3.md`
-- `data/fiasse/S2.4.md`
-- `data/fiasse/S2.6.md`
-- `data/fiasse/S3.2.1.md`
-- `data/fiasse/S3.2.2.md`
-- `data/fiasse/S3.2.3.md`
+- `data/fiasse/S2.1.md` — Securable Paradigm
+- `data/fiasse/S2.2.md` — Resiliently Add Computing Value
+- `data/fiasse/S2.3.md` — Reducing Material Impact
+- `data/fiasse/S2.4.md` — Aligning Security with Development
+- `data/fiasse/S2.5.md` — Transparency Principle
+- `data/fiasse/S2.6.md` — Principle of Least Astonishment
+- `data/fiasse/S3.2.1.md`–`S3.2.3.md` — SSEM attribute umbrellas (incl. `S3.2.1.4.md` Observability)
+- `data/fiasse/S4.3.md`, `S4.4.md`, `S4.4.1.md`, `S4.4.1.1.md`, `S4.4.1.2.md` — Boundary Control, Resilient Coding, Canonical Input Handling
+- `data/fiasse/S4.5.md`, `S4.6.md` — Dependency Management & Stewardship

@@ -1,6 +1,6 @@
 ---
 name: securability-engineering
-description: Generate, scaffold, or refactor code so it embodies FIASSE securable engineering qualities by default — applying the nine SSEM attributes (Analyzability, Modifiability, Testability, Confidentiality, Accountability, Authenticity, Availability, Integrity, Resilience), the Transparency principle, ASVS-aligned controls at the feature level, and FIASSE defensive coding practices. Invoke this skill whenever the user asks for "secure code", "securable code", "FIASSE-compliant code", asks to "harden" / "secure-by-default" / "audit-ready" code, asks to refactor for security, or generates security-sensitive components — even when those words are not explicit (e.g., "write an auth/login endpoint", "build a file upload handler", "implement password reset", "validate this user input", "write an API for X", "generate a database query handler", "make this safe to expose"). Use for code-generation moments specifically; for requirements work use prd-securability-enhancement, and for full SSEM-scored review use securability-engineering-review.
+description: Generate, scaffold, or refactor code so it embodies FIASSE securable engineering qualities by default — applying the ten SSEM attributes (Analyzability, Modifiability, Testability, Observability, Confidentiality, Accountability, Authenticity, Availability, Integrity, Resilience), the Transparency and Least-Astonishment principles, ASVS-aligned controls at the feature level, and FIASSE v1.0.4 defensive coding practices. Invoke this skill whenever the user asks for "secure code", "securable code", "FIASSE-compliant code", asks to "harden" / "secure-by-default" / "audit-ready" code, asks to refactor for security, or generates security-sensitive components — even when those words are not explicit (e.g., "write an auth/login endpoint", "build a file upload handler", "implement password reset", "validate this user input", "write an API for X", "generate a database query handler", "make this safe to expose"). Use for code-generation moments specifically; for requirements work use prd-securability-enhancement, and for full SSEM-scored review use securability-engineering-review.
 license: CC-BY-4.0
 ---
 
@@ -8,7 +8,7 @@ license: CC-BY-4.0
 
 This skill augments the built-in code generation capability by applying FIASSE/SSEM principles as engineering constraints. It does **not** perform full SSEM scoring (use `securability-engineering-review` for that) and does **not** run the full requirement → generate → review → enhance loop (use `plays/code-generation/securable-generation.md` for that). It ensures that **generated code embodies securable qualities from the start**.
 
-Reference data: `data/fiasse/` (especially S2.1–S2.6 foundational principles, S3.2.1–S3.2.3 SSEM attributes, S3.3.1 transparency, S6.3–S6.4 practical guidance) and `data/asvs/` for feature-level requirements.
+Reference data: `data/fiasse/` (especially S2.1–S2.6 foundational principles, S3.2.1–S3.2.3 SSEM attributes including S3.2.1.4 Observability, S2.5 Transparency, S4.3 Boundary Control, S4.4 Resilient Coding, S4.4.1 Canonical Input Handling, S4.6 Dependency Stewardship) and `data/asvs/` for feature-level requirements.
 
 ## When to Invoke
 
@@ -32,45 +32,50 @@ Before generating any code, apply these FIASSE principles:
 
 3. **Reducing Material Impact (S2.3)** — Favor pragmatic controls aligned with the code's context and exposure, not theoretical completeness.
 
-4. **Derived Integrity (S6.4.1.1)** — Never implicitly trust client-supplied values for server-owned state. Explicitly extract only expected values from requests; never accept client input directly for critical state or decisions.
+4. **Derived Integrity (S4.4.1.2)** — Never implicitly trust client-supplied values for server-owned state. Explicitly extract only expected values from requests; never accept client input directly for critical state or decisions.
 
-5. **Transparency (S2.6, S3.3.1)** — Code must be observable: meaningful naming, structured logging at trust boundaries, audit trails for security-sensitive actions, and instrumentation for health/performance.
+5. **Transparency & Observability (S2.5, S3.2.1.4)** — Code must be observable from its own outputs: meaningful naming, structured logging at trust boundaries, audit trails for security-sensitive actions, and instrumentation for health/performance built into the code rather than depending on external tooling alone.
 
-6. **Dependency Hygiene** — Default to the latest stable release compatible with the runtime and framework. Prefer packages with low CVE/CWE exposure, active maintenance, and strong release signals. Minimize dependency count and transitive risk.
+6. **Least Astonishment (S2.6)** — Behaviour and side-effects must match what the name and signature suggest. No hidden mutation, no implicit network/filesystem effects, no surprising error paths. Predictable behaviour aids both Analyzability and security reasoning.
 
-7. **Canonical Input Handling (S6.4.1)** — Apply canonicalize → sanitize → validate at every trust boundary. Prefer specific types and constrained enums. Never use a value that has not been fully vetted.
+7. **Boundary Control (S4.3)** — Flexibility belongs in the interior; control belongs at every trust boundary. Treat boundaries as the hard shell — strict input handling there — and keep the interior loose enough to evolve.
+
+8. **Dependency Hygiene & Stewardship (S4.5, S4.6)** — Default to the latest stable release compatible with the runtime and framework. Prefer packages with low CVE/CWE exposure, active maintenance, and strong release signals. Minimize dependency count and transitive risk; treat each dependency as an ongoing relationship, not a one-time decision.
+
+9. **Canonical Input Handling (S4.4.1)** — Apply canonicalize → sanitize → validate at every trust boundary. Prefer specific types and constrained enums. Never use a value that has not been fully vetted. Apply Request Surface Minimization (S4.4.1.1) — process only the specific named values you expect.
 
 ## SSEM Attribute Enforcement
 
-Every code generation output must satisfy these nine attributes. Read `data/fiasse/` sections for definitions when context is needed.
+Every code generation output must satisfy these ten attributes. Read `data/fiasse/` sections for definitions when context is needed.
 
 ### Maintainability (S3.2.1)
 
 | Attribute | Enforcement |
 |-----------|-------------|
-| **Analyzability** | Methods ≤ 30 LoC. Cyclomatic complexity < 10. Clear, descriptive naming. No dead code. Comments only at trust boundaries and complex logic, explaining *why* — not *what*. |
-| **Modifiability** | Loose coupling via interfaces / dependency injection. No static mutable state. Security-sensitive logic (auth, crypto, validation) centralized in dedicated modules, not scattered across call sites. Configuration externalized. |
-| **Testability** | All public interfaces testable without modifying code under test. Dependencies injectable / mockable. Security controls isolated for dedicated test suites. |
+| **Analyzability** (S3.2.1.1) | Methods ≤ 30 LoC. Cyclomatic complexity < 10. Clear, descriptive naming. No dead code. Comments only at trust boundaries and complex logic, explaining *why* — not *what*. |
+| **Modifiability** (S3.2.1.2) | Loose coupling via interfaces / dependency injection. No static mutable state. Security-sensitive logic (auth, crypto, validation) centralized in dedicated modules, not scattered across call sites. Configuration externalized. |
+| **Testability** (S3.2.1.3) | All public interfaces testable without modifying code under test. Dependencies injectable / mockable. Security controls isolated for dedicated test suites. |
+| **Observability** (S3.2.1.4) | Code-level instrumentation, not external tooling alone. Structured logs with sufficient context (who/what/where/when/outcome) at trust boundaries and security-sensitive operations. Health and performance metrics exposed through a standardized API. Failure paths produce observable signals; no silent exception swallowing. UI/operator feedback surfaces meaningful state without leaking internals. |
 
 ### Trustworthiness (S3.2.2)
 
 | Attribute | Enforcement |
 |-----------|-------------|
-| **Confidentiality** | Sensitive data classified at the type level. Least-privilege data access. No secrets in code, logs, or error messages. Encryption at rest and in transit where applicable. Data minimization — collect and retain only what is needed. |
-| **Accountability** | Security-sensitive actions logged with structured data (who, what, where, when). Audit trails append-only. Auth events (login, logout, failure) and authz decisions (grant, deny) recorded. No sensitive data in logs. |
-| **Authenticity** | Use established authentication mechanisms. Verify token/session integrity (signed JWTs, secure cookies). Mutually authenticate service-to-service calls. Support non-repudiation. |
+| **Confidentiality** (S3.2.2.1) | Sensitive data classified at the type level. Least-privilege data access. No secrets in code, logs, or error messages. Encryption at rest and in transit where applicable. Data minimization — collect and retain only what is needed. |
+| **Accountability** (S3.2.2.2) | Security-sensitive actions logged with structured data (who, what, where, when). Audit trails append-only. Auth events (login, logout, failure) and authz decisions (grant, deny) recorded. No sensitive data in logs. |
+| **Authenticity** (S3.2.2.3) | Use established authentication mechanisms (Defendable Authentication). Verify token/session integrity (signed JWTs with pinned algorithm, secure cookies). Mutually authenticate service-to-service calls. Support non-repudiation. |
 
 ### Reliability (S3.2.3)
 
 | Attribute | Enforcement |
 |-----------|-------------|
-| **Availability** | Enforce resource limits (memory, connections, file handles). Configure timeouts for all external calls. Rate-limit where appropriate. Thread-safe design for concurrent code. Graceful degradation for non-critical failures. |
-| **Integrity** | Validate input at every trust boundary: canonicalize → sanitize → validate (S6.4.1). Output-encode when crossing trust boundaries. Use parameterized queries exclusively. Apply Derived Integrity Principle (S6.4.1.1) — never accept client-supplied values for server-owned state. Apply Request Surface Minimization — extract only specific expected values from requests. |
-| **Resilience** | Defensive coding: anticipate out-of-bounds input and handle gracefully. Specific exception handling — no bare catch-all. Sandbox null checks to input/DB boundaries. Use immutable data structures in concurrent code. No resource leaks — proper disposal patterns. Graceful degradation under load. |
+| **Availability** (S3.2.3.1) | Enforce resource limits (memory, connections, file handles). Configure timeouts for all external calls. Rate-limit where appropriate. Thread-safe design for concurrent code. Graceful degradation for non-critical failures. |
+| **Integrity** (S3.2.3.2) | Validate input at every trust boundary: canonicalize → sanitize → validate (S4.4.1). Output-encode when crossing trust boundaries. Use parameterized queries exclusively. Apply Derived Integrity Principle (S4.4.1.2) — never accept client-supplied values for server-owned state. Apply Request Surface Minimization (S4.4.1.1) — extract only specific expected values from requests. |
+| **Resilience** (S3.2.3.3) | Defensive coding: anticipate out-of-bounds input and handle gracefully. Specific exception handling — no bare catch-all. Sandbox null checks to input/DB boundaries. Use immutable data structures in concurrent code. No resource leaks — deterministic disposal patterns (`with`, `using`, RAII). Graceful and **secure** failure: error messages don't leak internals; least privilege at the code level (drop elevated permissions when no longer needed). |
 
-## Trust Boundary Handling (S6.3)
+## Trust Boundary Handling (S4.3)
 
-Apply the **Turtle Analogy**: hard shell at trust boundaries, flexible interior.
+Apply the **Boundary Control Principle** (the "turtle analogy"): hard shell at trust boundaries, flexible interior.
 
 - Identify trust boundaries: user input, API calls, DB queries, file I/O, service-to-service.
 - Apply strict input handling (canonicalization → sanitization → validation) at every boundary entry point.
@@ -99,18 +104,19 @@ When generating code, apply this sequence:
 
 2. **Map Feature Requirements to ASVS** — Use `data/asvs/README.md` and the relevant `data/asvs/V*.md` chapters to identify the security requirements applying to the feature being generated. Match the request to ASVS sections via chapter topic and `when_to_use` guidance, then use the applicable requirements as implementation constraints.
 
-3. **Apply SSEM Constraints** — Enforce the attribute rules in the tables above. Consult `data/fiasse/S3.2.1.md`–`S3.2.3.md` for definitions when needed.
+3. **Apply SSEM Constraints** — Enforce the attribute rules in the tables above. Consult `data/fiasse/S3.2.1.md`–`S3.2.3.md` for umbrella definitions, and the leaf files (e.g., `S3.2.1.4.md` Observability, `S3.2.2.3.md` Authenticity) for attribute-specific guidance.
 
-4. **Handle Trust Boundaries** — Identify where generated code crosses trust boundaries. Apply S6.3 (Flexibility Principle) and S6.4 (defensive coding, canonical input handling, Derived Integrity, Request Surface Minimization).
+4. **Handle Trust Boundaries** — Identify where generated code crosses trust boundaries. Apply S4.3 (Boundary Control Principle) and S4.4 (Resilient Coding, including S4.4.1 Canonical Input Handling, S4.4.1.1 Request Surface Minimization, S4.4.1.2 Derived Integrity).
 
-5. **Select Dependencies Deliberately**:
+5. **Select Dependencies Deliberately** (S4.5 Management, S4.6 Stewardship):
    - Latest stable versions unless a compatibility constraint is known
    - Low known CVE/CWE exposure; no unresolved critical/high issues
    - Mature, actively maintained projects with recent releases
    - Minimize footprint; avoid libraries when standard library suffices
    - Pin versions; include lockfile guidance for reproducibility
+   - Treat the dependency as an ongoing relationship: would it remain trustworthy and maintainable a year from now? (Stewardship)
 
-6. **Instrument Transparency** — Add structured logging at security-sensitive points. Include audit-trail hooks for auth/authz events. Expose health metrics where applicable. Follow S3.3.1 transparency tactics.
+6. **Instrument Transparency & Observability** — Add structured logging at security-sensitive points (S2.5). Include audit-trail hooks for auth/authz events. Expose health metrics where applicable. Build observability into the code itself, not relying on external tooling alone (S3.2.1.4).
 
 7. **Generate Code** — Produce the code with all SSEM constraints applied. Code should be:
    - Small, single-purpose functions with clear names (Analyzability)
@@ -189,10 +195,10 @@ def get_order(
 
 What changed and why:
 
-- `order_id: UUID` canonicalizes input at the boundary (Integrity, S6.4.1).
-- `find_owned_by(order_id, user_id)` enforces ownership server-side — `current_user.id` is server-owned state, never trusted from the client (Derived Integrity, S6.4.1.1).
-- `OrderView` projection limits the response to expected fields (Confidentiality, Request Surface Minimization).
-- Structured logs at boundary outcomes give the audit pipeline what it needs (Accountability, Transparency).
+- `order_id: UUID` canonicalizes input at the boundary (Integrity, S4.4.1).
+- `find_owned_by(order_id, user_id)` enforces ownership server-side — `current_user.id` is server-owned state, never trusted from the client (Derived Integrity, S4.4.1.2).
+- `OrderView` projection limits the response to expected fields (Confidentiality, Request Surface Minimization S4.4.1.1).
+- Structured logs at boundary outcomes give the audit pipeline what it needs (Accountability, Observability — S2.5, S3.2.1.4).
 - `Depends(get_orders_repo)` is injectable, so tests can run without a real DB (Testability, Modifiability).
 - 404 returned for both "not found" and "not owned" — avoids signalling existence to non-owners (Confidentiality).
 
@@ -205,6 +211,7 @@ A `Securability Notes` block following the code template above would round out t
 - [ ] No static mutable state; dependencies injected
 - [ ] Security logic centralized, not duplicated
 - [ ] Testable without modifying code under test
+- [ ] Observability built into the code: structured logs at boundaries with sufficient context; failure paths are observable; instrumentation does not depend on external tooling alone
 
 **Trustworthiness**:
 - [ ] No secrets, PII, or tokens in code, logs, or error output
@@ -238,7 +245,7 @@ A `Securability Notes` block following the code template above would round out t
 
 **Output format**:
 - [ ] Securability Notes block included after the code (lean — only material points)
-- [ ] Notes name the 2–4 SSEM attributes that actually shaped the code (not all nine)
+- [ ] Notes name the 2–4 SSEM attributes that actually shaped the code (not all ten)
 - [ ] Trade-offs section calls out anything a reviewer would want to revisit
 
 ## When in Doubt
@@ -250,13 +257,17 @@ A `Securability Notes` block following the code template above would round out t
 
 ## FIASSE References
 
-- [FIASSE RFC](https://github.com/Xcaciv/securable_software_engineering/blob/main/docs/FIASSE-RFC.md) — Framework for Integrating Application Security into Software Engineering
+- [FIASSE Framework v1.0.4](https://github.com/Xcaciv/securable_software_engineering/blob/v1.0.4/docs/securable_framework.md) — Framework for Integrating Application Security into Software Engineering
 - `data/asvs/README.md` — ASVS chapter index
 - `data/asvs/V*.md` — ASVS 5.0 feature requirements by chapter
-- `data/fiasse/S2.1.md`–`S2.6.md` — Foundational Principles
-- `data/fiasse/S3.2.1.md`–`S3.2.3.md` — SSEM Core Attributes
-- `data/fiasse/S3.3.1.md` — Transparency Strategy
-- `data/fiasse/S6.3.md` — Flexibility Principle (Trust Boundaries)
-- `data/fiasse/S6.4.md` — Resilient Coding, Derived Integrity, Request Surface Minimization
+- `data/fiasse/S2.1.md`–`S2.6.md` — Foundational Principles (incl. Transparency S2.5 and Least Astonishment S2.6)
+- `data/fiasse/S3.2.1.md`–`S3.2.3.md` — SSEM Core Attribute umbrellas (Maintainability, Trustworthiness, Reliability)
+- `data/fiasse/S3.2.1.4.md` — Observability (the 10th SSEM attribute)
+- `data/fiasse/S4.3.md` — Boundary Control Principle (Trust Boundaries)
+- `data/fiasse/S4.4.md` — Resilient Coding
+- `data/fiasse/S4.4.1.md` — Canonical Input Handling
+- `data/fiasse/S4.4.1.1.md` — Request Surface Minimization Principle
+- `data/fiasse/S4.4.1.2.md` — Derived Integrity Principle
+- `data/fiasse/S4.5.md` / `S4.6.md` — Dependency Management and Stewardship
 - ISO/IEC 25010:2011 — Software quality models
 - RFC 4949 — Internet Security Glossary

@@ -2,9 +2,9 @@
 
 Analyze code and architecture for inherent securable qualities using the Framework for Integrating Application Security into Software Engineering (FIASSE) and the Securable Software Engineering Model (SSEM). Unlike vulnerability-centric reviews that ask "Is it secure?", this play evaluates whether code possesses the fundamental engineering attributes that make software **securable** — able to adapt to and withstand evolving threats over time.
 
-This play operationalizes the nine core SSEM attributes across three categories: **Maintainability** (Analyzability, Modifiability, Testability), **Trustworthiness** (Confidentiality, Accountability, Authenticity), and **Reliability** (Availability, Integrity, Resilience). Findings are framed as engineering improvement opportunities rather than exploit-centric vulnerabilities.
+This play operationalizes the ten core SSEM attributes (FIASSE v1.0.4) across three categories: **Maintainability** (Analyzability, Modifiability, Testability, **Observability**), **Trustworthiness** (Confidentiality, Accountability, Authenticity), and **Reliability** (Availability, Integrity, Resilience). The scoring rubric in `skills/securability-engineering-review/SKILL.md` treats Observability as evidence supporting Analyzability and Accountability rather than scoring it as a separate sub-attribute (the rubric scores 9 items by deliberate combine/split). Findings are framed as engineering improvement opportunities rather than exploit-centric vulnerabilities.
 
-> **Reference**: [FIASSE RFC — A Framework for Integrating Application Security into Software Engineering](https://github.com/Xcaciv/securable_software_engineering/blob/main/docs/FIASSE-RFC.md) by Alton Crossley
+> **Reference**: [FIASSE Framework v1.0.4 — A Framework for Integrating Application Security into Software Engineering](https://github.com/Xcaciv/securable_software_engineering/blob/v1.0.4/docs/securable_framework.md) by Alton Crossley
 
 ## Trigger Conditions
 
@@ -32,8 +32,9 @@ Before analysis, internalize these FIASSE principles:
 1. **The Securable Paradigm** — There is no static "secure" state. Software must be built with inherent qualities that enable it to adapt to evolving threats (FIASSE §2.1).
 2. **Resiliently Add Computing Value** — The primary directive is to create valuable code robust enough to withstand change, stress, and attack (FIASSE §2.2).
 3. **Reducing Material Impact** — The goal is to reduce the probability of material impact from cyber events, not to achieve perfect security (FIASSE §2.3).
-4. **Engineer vs. Hacker Mindset** — Focus on engineering solutions, not exploit reproduction. Building securely is distinct from knowing how to compromise (FIASSE §2.4).
-5. **Transparency** — A system's internal state and behavior should be observable and understandable to authorized parties (FIASSE §2.6).
+4. **Aligning Security with Development (Engineer vs. Hacker Mindset)** — Focus on engineering solutions, not exploit reproduction. Building securely is distinct from knowing how to compromise (FIASSE §2.4).
+5. **Transparency** — A system's internal state and behavior should be observable and understandable to authorized parties (FIASSE §2.5).
+6. **Least Astonishment** — Systems should behave intuitively and predictably; eliminate hidden side effects and surprising boundaries (FIASSE §2.6).
 
 ## Scoring Framework
 
@@ -146,6 +147,27 @@ Maintainability is the "degree of effectiveness and efficiency with which a prod
 - [ ] Test execution is fast enough to run on every commit
 - [ ] Integration tests cover trust boundary crossings
 - [ ] Negative test cases exist (what should be *rejected*)
+
+#### 2.4 Observability (FIASSE v1.0.4 — feeds Analyzability and Accountability scores)
+
+> *"The degree to which the internal state of a system can be inferred from its external outputs."* — FIASSE §3.2.1.4
+
+Observability is the 10th SSEM attribute introduced in v1.0.4. The 9-item scoring rubric in the skill folds observability evidence into Analyzability (for diagnosability) and Accountability (for audit traceability). Treat the items below as inputs to those scores: a codebase that is opaque at runtime cannot earn high Analyzability or Accountability marks regardless of static-analysis quality.
+
+| Factor | What to Measure | Target |
+|--------|----------------|--------|
+| Log coverage | % of trust boundaries and security-sensitive operations emitting structured logs with sufficient context (identity, action, outcome, timestamp) | High; gaps must be justified |
+| Instrumentation coverage | Fraction of critical execution paths exposing health/performance metrics through a standardized API | Comprehensive for security-sensitive paths |
+| Code-level instrumentation vs. tooling | Is observability built into the code, or only added by external tooling? | Built into the code |
+| Failure-path observability | Do error and recovery paths produce observable signals? | No silent failures or exception swallowing |
+| Alert signal-to-noise ratio | Ratio of actionable to total alerts | Tunable; high SNR over time |
+
+**Checklist:**
+- [ ] Structured logs include who, what, where, when, and outcome at security-relevant events
+- [ ] Failure paths and error recovery produce log/metric output (no silent failures)
+- [ ] Code-level instrumentation exists at trust boundaries — not only in external tools
+- [ ] Health and performance metrics exposed through a standardized API
+- [ ] UI/operator feedback surfaces meaningful state without leaking implementation details
 
 ### 3. SSEM Attribute Assessment — Trustworthiness
 
@@ -267,8 +289,8 @@ Reliability is the "degree to which a system performs specified functions under 
 - [ ] Database operations use parameterized queries exclusively
 - [ ] File operations validate paths and prevent traversal
 - [ ] State transitions follow a defined state machine — not client-dictated
-- [ ] The **Derived Integrity Principle** is followed: values critical to system state are calculated server-side, never accepted from clients (FIASSE §6.4.1.1)
-- [ ] The **Request Surface Minimization Principle** is applied: only specific expected values are extracted from requests (FIASSE §6.4.1.1)
+- [ ] The **Derived Integrity Principle** is followed: values critical to system state are calculated server-side, never accepted from clients (FIASSE §4.4.1.2)
+- [ ] The **Request Surface Minimization Principle** is applied: only specific expected values are extracted from requests (FIASSE §4.4.1.1)
 - [ ] Defense-in-depth layers are implemented — multiple integrity controls, not single points of failure
 - [ ] Tamper detection mechanisms exist for critical data and configuration
 
@@ -300,9 +322,9 @@ Reliability is the "degree to which a system performs specified functions under 
 
 ### 5. Transparency Assessment
 
-> *"A foundational engineering strategy that underpins several core SSEM attributes, enabling trust and simplifying analysis."* — FIASSE §2.6
+> *"A foundational engineering strategy that underpins several core SSEM attributes, enabling trust and simplifying analysis."* — FIASSE §2.5
 
-Transparency is a cross-cutting concern that enables all other SSEM attributes.
+Transparency is a cross-cutting concern that enables all other SSEM attributes. In v1.0.4 it is reinforced by the Principle of Least Astonishment (§2.6) and operationalized through the Observability attribute (§3.2.1.4).
 
 **Checklist:**
 - [ ] Code is self-documenting with meaningful naming and finite data types
@@ -313,7 +335,7 @@ Transparency is a cross-cutting concern that enables all other SSEM attributes.
 - [ ] Version control is used effectively (meaningful commits, clear history)
 - [ ] Debug logging is available (optional) for deeper analysis without impacting production
 
-### 6. Code-Level Threat Identification (FIASSE §6.2.1)
+### 6. Code-Level Threat Identification (FIASSE §4.2.1)
 
 Apply the "What can go wrong?" question at the code level:
 
@@ -326,17 +348,17 @@ Apply the "What can go wrong?" question at the code level:
 - **Map solutions to SSEM attributes**: When addressing threats, consider which SSEM attributes (especially Trustworthiness and Reliability) lead to holistic architectural solutions rather than line-level patches
 - **Feed back to threat model**: Code-level threats should inform design-level threat models
 
-### 7. Dependency Securability (FIASSE §6.5)
+### 7. Dependency Securability (FIASSE §4.5 Management, §4.6 Stewardship)
 
-Apply SSEM principles to dependency management:
+Apply SSEM principles to dependency management and stewardship. Stewardship asks not only "is this dependency acceptable today?" but: "Would it remain responsible, maintainable, and trustworthy a year from now?"
 
 | SSEM Attribute | Dependency Evaluation |
 |---------------|----------------------|
 | Analyzability | Understand full scope including transitive dependencies; maintain clear inventory with rationale |
 | Modifiability | Design loosely coupled integration; facilitate easier updates, patching, or replacement |
 | Testability | Ensure dependencies can be mocked/stubbed; integration points are robustly testable |
-| Trustworthiness | Verify source and integrity (signed packages, checksums, trusted repositories) |
-| Reliability | Assess failure modes and impact on overall system resilience |
+| Trustworthiness (Authenticity, Integrity) | Verify source and integrity (signed packages, checksums, trusted repositories); ongoing maintainer signals over time |
+| Reliability (Resilience) | Assess failure modes and impact on overall system resilience; plan for abandonment or compromise |
 
 **Checklist:**
 - [ ] Each dependency has a documented rationale for inclusion
@@ -345,6 +367,7 @@ Apply SSEM principles to dependency management:
 - [ ] Unnecessary dependencies are removed
 - [ ] Regular dependency maintenance is scheduled (not just CVE-reactive)
 - [ ] Dependencies are evaluated against SSEM cultural values before adoption
+- [ ] Stewardship: each dependency's ongoing health (release cadence, maintainer activity, CVE response) is monitored and reviewed periodically (FIASSE §4.6)
 
 ### 8. Produce Findings
 
@@ -571,7 +594,7 @@ Resilience:
 ## References
 
 - [OWASP FIASSE — Framework for Integrating Application Security into Software Engineering](https://owasp.org/www-project-fiasse/)
-- [OWASP FIASSE RFC](https://github.com/Xcaciv/securable_software_engineering/blob/main/docs/FIASSE-RFC.md) — Alton Crossley
+- [OWASP FIASSE Framework v1.0.4](https://github.com/Xcaciv/securable_software_engineering/blob/v1.0.4/docs/securable_framework.md) — Alton Crossley
 - ISO/IEC 25010:2011 — Systems and software quality models
 - RFC 4949 — Internet Security Glossary
 - ISO/IEC 27000:2018 — Information security management systems
