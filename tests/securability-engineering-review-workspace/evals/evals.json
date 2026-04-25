@@ -1,0 +1,65 @@
+{
+  "skill_name": "securability-engineering-review",
+  "evals": [
+    {
+      "id": 0,
+      "name": "python-flask-orders-review",
+      "prompt": "Please do an SSEM-style securability review of this Python Flask order-handling module. It's part of a B2C customer portal. I want the full SSEM scorecard with sub-attribute scores, the three-part report, and a 45-item checklist. Be specific about what's broken — engineering improvements, not generic 'follow best practices' advice. The file is attached.",
+      "files": ["evals/inputs/python-flask-orders.py"],
+      "assertions": [
+        {"text": "Output contains the three-part SSEM report (Score Summary / Detailed Findings / Appendix A checklist) with all three parts present and clearly labeled"},
+        {"text": "Each of the nine sub-attributes (Analyzability, Modifiability, Testability, Confidentiality, Authenticity & Accountability, Integrity, Integrity Operational, Resilience, Availability) has a numeric 0-10 score"},
+        {"text": "Sub-attribute scores show meaningful differentiation — not all the same number — reflecting the mixed quality of the code under review"},
+        {"text": "Pillar weighted scores are computed and the math is shown (Maintainability 33%, Trustworthiness 34%, Reliability 33% with the prescribed sub-weights)"},
+        {"text": "The overall score and a grade (Excellent/Good/Adequate/Fair/Poor) are produced consistent with the grading scale"},
+        {"text": "SQL injection in get_order via string concatenation is flagged with a specific code reference and remediation"},
+        {"text": "Hardcoded DB_PASSWORD secret is flagged with a specific code reference and remediation"},
+        {"text": "create_order accepting client-supplied user_id (Derived Integrity violation) is flagged"},
+        {"text": "Lack of structured logging (use of print() and limited audit fields) is flagged under Accountability"},
+        {"text": "Lack of tests (\"No tests in this module yet\") is flagged under Testability"},
+        {"text": "Recommendations include priority labels (High/Medium/Low) and concrete actionable steps with file/line references"},
+        {"text": "Appendix A includes a 45-item checklist (15 each for Maintainability, Trustworthiness, Reliability) with pass/fail markers and a summary count"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "node-express-tickets-review",
+      "prompt": "Run a securable-engineering review of this Express/TypeScript helpdesk-tickets file. Score it through SSEM, give me the three-part report, and call out the engineering work that needs to happen before we'd consider this audit-ready. File is attached.",
+      "files": ["evals/inputs/node-express-tickets.ts"],
+      "assertions": [
+        {"text": "Output contains the three-part SSEM report (Score Summary / Detailed Findings / Appendix A checklist) with all three parts present"},
+        {"text": "Each of the nine sub-attributes has a numeric 0-10 score"},
+        {"text": "Scores show meaningful differentiation across sub-attributes (not uniform)"},
+        {"text": "Pillar weighted scores are computed with visible math; overall score and grade produced"},
+        {"text": "Use of `any` typing on req and on the JWT payload (loss of type safety, possible payload-injection of arbitrary fields) is flagged"},
+        {"text": "Mass-assignment risk in PATCH /tickets/:id (spreading req.body directly into the update) is flagged with remediation suggesting a field allowlist"},
+        {"text": "DELETE endpoint lacks authorization check (any authenticated user can delete any ticket) is flagged"},
+        {"text": "JWT verification accepts the token without pinning the algorithm — algorithm-confusion / alg:none risk — is flagged"},
+        {"text": "Authorization filter for non-admins relies on `req.user.email` which the JWT payload may control (Derived Integrity / authz on client-asserted state) is flagged"},
+        {"text": "Logging gaps and lack of structured audit logging on ticket lifecycle events are flagged under Accountability"},
+        {"text": "Recommendations include priority labels and concrete actionable steps with file/line references"},
+        {"text": "Appendix A includes a 45-item checklist (15 each pillar) with pass/fail markers and a summary count"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "go-http-files-review",
+      "prompt": "I need an SSEM securability review on this Go file-handling service. Score every sub-attribute, give me the three-part report, and prioritize the issues so I know what to fix first. File is attached.",
+      "files": ["evals/inputs/go-http-files.go"],
+      "assertions": [
+        {"text": "Output contains the three-part SSEM report (Score Summary / Detailed Findings / Appendix A checklist) with all three parts present"},
+        {"text": "Each of the nine sub-attributes has a numeric 0-10 score"},
+        {"text": "Scores show meaningful differentiation across sub-attributes"},
+        {"text": "Pillar weighted scores are computed with visible math; overall score and grade produced"},
+        {"text": "Path traversal vulnerability in HandleUpload/HandleDownload (filename taken from query string, joined into path with no traversal sanitization) is flagged with specific remediation"},
+        {"text": "Tenant identity taken from a request header (X-Tenant-ID) without authentication or signed-claim verification is flagged"},
+        {"text": "Reading the entire upload body with ioutil.ReadAll (no size limit, full buffer in memory) is flagged under Availability/Resilience"},
+        {"text": "Use of deprecated ioutil package (and missing context propagation / timeouts) is flagged"},
+        {"text": "Errors propagated raw to the response body via http.Error(w, err.Error(), ...) leaking internal paths is flagged"},
+        {"text": "Lack of structured logging (use of fmt.Println) is flagged under Accountability"},
+        {"text": "Recommendations include priority labels and concrete actionable steps with file/line references"},
+        {"text": "Appendix A includes a 45-item checklist (15 each pillar) with pass/fail markers and a summary count"}
+      ]
+    }
+  ]
+}
