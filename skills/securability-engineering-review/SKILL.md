@@ -58,6 +58,8 @@ Interpolation between anchors is allowed when justified by evidence, but stay co
 
 ### Sub-Attribute Inventory
 
+This rubric scores **9 sub-attributes**, which is a deliberate restructuring of the FIASSE v1.0.4 SSEM model (10 attributes). The rubric **combines** Authenticity and Accountability into one Trustworthiness item and **splits** Integrity into a Trustworthiness item and a separate Reliability "Operational Integrity" item. **Observability** (the 10th SSEM attribute introduced in v1.0.4) is treated as evidence supporting Analyzability and Accountability scores rather than scored separately — flag observability gaps inline in those sub-attributes.
+
 The nine sub-attributes are exactly:
 
 1. **Analyzability** (Maintainability)
@@ -189,16 +191,16 @@ This is the level of specificity the report should hit at scale — every score 
 
 ## Pattern Tag Reference
 
-When you find one of these common patterns in code, tag it with the FIASSE/SSEM principle it violates. Specific named tagging is what makes a report actionable — saying "the code mishandles auth" is weak; saying "this is a Derived Integrity violation (FIASSE S6.4.1.1) — the server's authorization decision rests on a client-asserted JWT claim" is strong.
+When you find one of these common patterns in code, tag it with the FIASSE/SSEM principle it violates. Specific named tagging is what makes a report actionable — saying "the code mishandles auth" is weak; saying "this is a Derived Integrity violation (FIASSE v1.0.4 S4.4.1.2) — the server's authorization decision rests on a client-asserted JWT claim" is strong.
 
 | Pattern observed in code | Principle / sub-attribute violated | Tag in finding |
 |---|---|---|
-| Server decides who-can-do-what based on a client-asserted claim (`req.user.email`, `request.body.user_id`, `X-Tenant-ID` header) | Integrity — **Derived Integrity Principle** (FIASSE S6.4.1.1) | "Derived Integrity violation" |
-| Spread of `req.body` / `**kwargs` directly into a database update or model field-set | Integrity — **Request Surface Minimization** (FIASSE S6.4.1.1) | "Request Surface Minimization violation; mass assignment" |
-| String-built SQL or shell commands; format strings with user input | Integrity — input handling at trust boundary (FIASSE S6.4.1, S6.3) | "Trust boundary input handling" |
-| Path joined with user-controlled segment without `..`/separator validation | Integrity — trust boundary; canonicalize → sanitize → validate (FIASSE S6.4.1) | "Path canonicalization gap" |
+| Server decides who-can-do-what based on a client-asserted claim (`req.user.email`, `request.body.user_id`, `X-Tenant-ID` header) | Integrity — **Derived Integrity Principle** (FIASSE S4.4.1.2) | "Derived Integrity violation" |
+| Spread of `req.body` / `**kwargs` directly into a database update or model field-set | Integrity — **Request Surface Minimization** (FIASSE S4.4.1.1) | "Request Surface Minimization violation; mass assignment" |
+| String-built SQL or shell commands; format strings with user input | Integrity — input handling at trust boundary (FIASSE S4.4.1, S4.3) | "Trust boundary input handling" |
+| Path joined with user-controlled segment without `..`/separator validation | Integrity — trust boundary; canonicalize → sanitize → validate (FIASSE S4.4.1) | "Path canonicalization gap" |
 | `jwt.verify` with no pinned algorithms / no audience / no issuer; or using a default-allow algorithm list | Authenticity (token integrity); Trustworthiness | "Token verification under-specified" |
-| `console.log` / `print` / `fmt.Println` standing in for an audit trail; missing actor, target, outcome, request id | Accountability (RFC 4949 traceability); Transparency (FIASSE S2.6, S3.3.1) | "Unstructured audit trail" |
+| `console.log` / `print` / `fmt.Println` standing in for an audit trail; missing actor, target, outcome, request id | Accountability (RFC 4949 traceability); Transparency / Observability (FIASSE S2.5, S3.2.1.4) | "Unstructured audit trail" |
 | Bare `except:` / `catch (e)` returning raw exception text to the client | Resilience (graceful degradation); Confidentiality (info leakage) | "Specific exception handling missing" |
 | Module-level globals (DB connection, app, config) created at import time | Modifiability (loose coupling) and Testability (mockability) | "Import-time side effects" |
 | `ioutil.ReadAll(r.Body)` / unlimited request body buffer | Availability and Resilience (resource limits) | "Unbounded resource consumption" |
@@ -236,7 +238,7 @@ When invoked:
 
 ## OWASP & FIASSE References
 
-- [OWASP FIASSE](https://github.com/Xcaciv/securable_software_engineering/blob/main/docs/secureable_framework.md)
+- [OWASP FIASSE v1.0.4](https://github.com/Xcaciv/securable_software_engineering/blob/v1.0.4/docs/securable_framework.md)
 - ISO/IEC 25010:2011 — Software quality models (Maintainability, Reliability)
 - RFC 4949 — Internet Security Glossary
 - OWASP Code Review Guide

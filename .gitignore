@@ -19,6 +19,11 @@ venv/
 Thumbs.db
 
 # ---------------------------------------------------------------------------
+# Claude local settings (machine-specific, should not be committed)
+# ---------------------------------------------------------------------------
+.claude/settings.local.json
+
+# ---------------------------------------------------------------------------
 # Node (in case eval-viewer or other tooling pulls deps locally)
 # ---------------------------------------------------------------------------
 node_modules/

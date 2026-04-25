@@ -90,15 +90,18 @@ Filter requirements by the chosen ASVS level. For each requirement, classify cov
 
 ### Step 4 — Add Securability Notes per feature
 
-Write a *short* paragraph per feature surfacing only the SSEM and FIASSE points that materially shape implementation. Do not enumerate all nine SSEM attributes or all FIASSE tenets — that produces noise. Surface only what matters for *this* feature.
+Write a *short* paragraph per feature surfacing only the SSEM and FIASSE points that materially shape implementation. Do not enumerate all ten SSEM attributes or all FIASSE tenets — that produces noise. Surface only what matters for *this* feature.
 
 Useful lenses to consider (mention only when relevant):
 
-- Trust-boundary handling and input canonicalization (FIASSE S6.3, S6.4)
-- Derived integrity — never trust client-supplied values for server-owned state (FIASSE S6.4.1.1)
-- Observability: what must be logged or auditable (SSEM Accountability, FIASSE Transparency)
-- Resilience or availability drivers (rate limits, timeouts, graceful degradation)
+- Trust-boundary handling and input canonicalization (FIASSE S4.3 Boundary Control, S4.4.1 Canonical Input Handling)
+- Derived integrity — never trust client-supplied values for server-owned state (FIASSE S4.4.1.2)
+- Request Surface Minimization — process only the named values you expect (FIASSE S4.4.1.1)
+- Observability: what must be logged or auditable (SSEM Observability S3.2.1.4 + Accountability; FIASSE Transparency S2.5)
+- Least Astonishment — predictable behaviour at trust boundaries and error paths (FIASSE S2.6)
+- Resilience or availability drivers (rate limits, timeouts, graceful and **secure** failure)
 - Testability or modifiability mandates (e.g., centralizing crypto/auth in a dedicated module)
+- Dependency stewardship — ongoing relationship with third-party code (FIASSE S4.6)
 
 ### Step 5 — Convert into testable acceptance criteria
 
@@ -207,7 +210,7 @@ Anything you could not resolve from the input: missing system context, unclear d
 - More than 5 reset requests for the same email within 10 minutes are rejected with HTTP 429 and logged.
 - Audit log lines for reset events are queryable by user ID and contain the fields above.
 
-**Securability Notes**: This feature crosses an unauthenticated trust boundary, so input handling and rate limiting are the load-bearing concerns. The reset token is server-owned state; never accept client-supplied token attributes beyond the opaque token itself (Derived Integrity). Centralize token generation, hashing, and verification in a single module so the policy can evolve without touching call sites (Modifiability). All reset events must be observable in the audit pipeline so abuse patterns can be detected (Accountability, Transparency).
+**Securability Notes**: This feature crosses an unauthenticated trust boundary (FIASSE S4.3), so input handling and rate limiting are the load-bearing concerns. The reset token is server-owned state; never accept client-supplied token attributes beyond the opaque token itself (Derived Integrity, S4.4.1.2). Centralize token generation, hashing, and verification in a single module so the policy can evolve without touching call sites (Modifiability). All reset events must be observable in the audit pipeline so abuse patterns can be detected (Accountability + Observability S3.2.1.4, Transparency S2.5).
 ```
 
 This is the level of specificity the output should hit — concrete, testable, and traceable back to ASVS.
@@ -242,6 +245,7 @@ This is the level of specificity the output should hit — concrete, testable, a
 - Full deep procedure: `plays/requirements-analysis/prd-fiasse-asvs-enhancement.md`
 - ASVS chapter index: `data/asvs/README.md`
 - ASVS requirements (per chapter): `data/asvs/V*.md`
-- FIASSE foundational principles: `data/fiasse/S2.1.md`–`S2.6.md`
-- FIASSE SSEM attributes: `data/fiasse/S3.2.1.md`–`S3.2.3.md`
-- FIASSE trust boundaries and resilient coding: `data/fiasse/S6.3.md`, `S6.4.md`
+- FIASSE foundational principles: `data/fiasse/S2.1.md`–`S2.6.md` (Transparency S2.5, Least Astonishment S2.6)
+- FIASSE SSEM attribute umbrellas: `data/fiasse/S3.2.1.md`–`S3.2.3.md`; leaf files (e.g. `S3.2.1.4.md` Observability) for attribute-specific guidance
+- FIASSE Boundary Control and Resilient Coding: `data/fiasse/S4.3.md`, `S4.4.md`, and the canonical-input-handling leaves `S4.4.1.md`, `S4.4.1.1.md`, `S4.4.1.2.md`
+- FIASSE Dependency Management and Stewardship: `data/fiasse/S4.5.md`, `S4.6.md`
