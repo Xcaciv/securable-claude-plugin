@@ -50,3 +50,4 @@ tests/**/feedback.json
 
 # Static review HTML if generated outside an iteration directory
 tests/**/review.html
+/.claude/settings.local.json

@@ -1,12 +1,12 @@
-# Play: PRD Securability Enhancement (FIASSE/SSEM + ASVS)
+# Play: PRD Securability Enhancement (FIASSE v1.0.4 / SSEM + ASVS)
 
-Enhance a Product Requirements Document (PRD) so each feature is explicitly engineered for securability using FIASSE/SSEM principles and mapped to relevant OWASP ASVS requirements.
+Step-by-step runbook for upgrading a PRD with explicit ASVS coverage and FIASSE v1.0.4 SSEM implementation guidance — *before* code is written.
 
-This play is requirement-centric (not code-centric): it upgrades feature requirements before implementation so delivery teams build securable capabilities by design.
+> **Source of truth**: [skills/prd-securability-enhancement/SKILL.md](../../skills/prd-securability-enhancement/SKILL.md) defines the level rubric, ASVS coverage gap pattern table, output templates, and quality checklist. This play sequences the work — it does not redefine the rubric or templates.
 
 ## Trigger Conditions
 
-Use this play when:
+Run this play when:
 
 - A user asks to strengthen a PRD with security requirements
 - A team needs feature-level ASVS requirement coverage before design or implementation
@@ -17,136 +17,87 @@ Use this play when:
 
 - PRD document (markdown, text, or structured requirements)
 - Target system context (if available): user types, deployment model, data sensitivity, integration boundaries
-- Optional risk profile, compliance constraints, or business criticality
+- Optional risk profile, compliance constraints, business criticality
+- ASVS-level preference, if any
 
-## Output
+## Steps
 
-Produce a concise enhanced PRD artifact with these sections:
+### 1. Parse features
 
-- ASVS level decision and rationale
-- Feature-ASVS coverage matrix (gap summary)
-- Per-feature updated requirements with compact securability notes
-- Cross-cutting securability requirements
-- Open gaps and assumptions
+Extract each feature into a normalized record. For each, capture:
 
-## Procedure
+- Feature ID and title (assign `F-NN` if absent)
+- Actor (user role, system, external service)
+- Data touched and sensitivity class
+- Trust boundaries crossed
+- Existing acceptance criteria, verbatim
 
-### 1. Establish Scope and Parse Features
+Split lumped capabilities into independently testable features.
 
-1. Parse the PRD into discrete feature entries.
-2. For each feature, capture:
-   - Feature ID and title
-   - User/system actor
-   - Data touched
-   - Trust boundaries crossed
-   - Existing acceptance criteria
-3. Normalize feature statements into testable requirement form where needed.
+### 2. Choose ASVS level *first*
 
-### 2. Choose ASVS Assurance Level First
+Use the level rubric in the skill (1 = internal/prototype, 2 = production default, 3 = high-assurance). Default to Level 2 unless evidence pushes lower or higher.
 
-Select one baseline ASVS level for the PRD before feature mapping.
+Document chosen level, why lower levels are insufficient, and any feature-level escalations.
 
-Decision guide:
+### 3. Map each feature to ASVS
 
-- **Level 1**: Low-risk/internal or prototype-like systems with limited sensitive data exposure.
-- **Level 2**: Typical production web/API systems with authenticated users and business-critical behavior.
-- **Level 3**: High-assurance systems (sensitive data, high-impact operations, elevated attacker interest, or strict regulatory pressure).
+For every feature, identify applicable chapters from `data/asvs/README.md` and the `when_to_use` frontmatter in `data/asvs/V*.md`. Filter requirements by the chosen level. Classify each requirement as **Covered**, **Partial**, **Missing**, or **N/A** (with rationale).
 
-Document:
+Apply the **ASVS Coverage Gap Pattern Table** in the skill — it surfaces the requirements PRDs reliably miss for common feature shapes (login, password reset, file upload, profile edit, role-based access, public API, webhook, export, LLM-backed features, etc.). When a feature trips a pattern, prefill the named requirements as **Missing** unless the PRD explicitly addresses them.
 
-- Chosen level
-- Why lower levels are insufficient (if level > 1)
-- Any features requiring level escalation beyond baseline
+### 4. Add Securability Notes per feature
 
-### 3. Process Requirements Feature-by-Feature Against ASVS
+Write a short paragraph surfacing only the SSEM and FIASSE points that materially shape implementation. Do not enumerate all attributes.
 
-Iterate each feature and map it to applicable ASVS chapters and requirements.
+Useful lenses (mention only when relevant):
 
-For every feature:
+- Trust-boundary handling and input canonicalization (FIASSE v1.0.4 S4.3, S4.4.1)
+- Derived Integrity (FIASSE v1.0.4 S4.4.1.2)
+- Request Surface Minimization (FIASSE v1.0.4 S4.4.1.1)
+- Observability and audit expectations (FIASSE v1.0.4 S3.2.1.4 + S2.5)
+- Least Astonishment (FIASSE v1.0.4 S2.6)
+- Resilience / availability drivers
+- Testability or modifiability mandates (centralizing crypto/auth)
+- Dependency stewardship (FIASSE v1.0.4 S4.6)
 
-1. Use `data/asvs/README.md` chapter index plus `when_to_use` frontmatter in `data/asvs/V*.md`.
-2. Identify all relevant ASVS sections (auth, access control, input validation, crypto, logging, etc.).
-3. Filter requirements by the selected ASVS level.
-4. Compare mapped requirements against current PRD text.
-5. Add missing requirement statements to the feature specification.
+### 5. Convert into testable acceptance criteria
 
-Record results in a coverage table:
+For each added or strengthened requirement, write at least one acceptance criterion that is:
 
-| Feature | ASVS Section | Requirement ID | Level | Coverage | PRD Change Needed                 |
-| ------- | ------------ | -------------- | ----- | -------- | --------------------------------- |
-| F-01    | V2.1         | 2.1.1          | 2     | Missing  | Add MFA/strong auth requirement   |
+- Behaviorally observable
+- Specific about boundary conditions (failure modes, unauthorized actors, malformed input)
+- Tied to a verifiable artifact (log line, response code, denied action)
 
-Coverage statuses:
+Reject ambiguous "secure" or "robust" language.
 
-- **Covered**: PRD already satisfies intent
-- **Partial**: intent partly covered; clarify acceptance criteria
-- **Missing**: requirement absent and must be added
-- **Not Applicable**: justified with short rationale
+### 6. Emit the enhanced PRD artifact
 
-### 4. Add Compact Securability Notes Per Feature
+Produce these sections, using the exact templates in the skill:
 
-For each feature, add a short **Securability Notes** paragraph that captures the most material SSEM and FIASSE considerations in plain language. Do not enumerate all ten SSEM attributes (FIASSE v1.0.4) or all six foundational principles individually. Instead, call out only the points that meaningfully shape implementation for that feature.
-
-Consider across SSEM pillars (Maintainability, Trustworthiness, Reliability) and FIASSE foundational principles (S2.1–S2.6, including Transparency S2.5 and Least Astonishment S2.6) but surface only what matters:
-
-- Key trust-boundary or data-handling constraints (S4.3 Boundary Control, S4.4 Resilient Coding)
-- Required observability / audit expectations (S2.5 Transparency, S3.2.1.4 Observability)
-- Derived integrity for server-owned state (S4.4.1.2)
-- Resilience or availability design drivers (graceful and secure failure)
-- Separation-of-concern or testability mandates
-- Dependency stewardship for third-party code (S4.6)
-
-Notation format per feature:
-
-```markdown
-### Feature F-01: [Title]
-
-**ASVS Mapping**: Vx.y.z, ...
-
-**Updated Requirements**:
-- ...
-
-**Securability Notes**: Brief paragraph covering material SSEM and FIASSE points.
-```
-
-### 5. Update Acceptance Criteria and NFRs
-
-For each feature, convert augmentations into explicit acceptance criteria and non-functional requirements:
-
-- Security behavior must be testable
-- Logs/audit outputs must be verifiable
-- Boundary validation and failure behavior must be defined
-- Data handling constraints must be measurable
-
-### 6. Produce Final Enhanced PRD Sections
-
-Produce:
-
-1. **ASVS Level Decision** — brief rationale
-2. **Feature-ASVS Coverage Matrix** — gap summary table
-3. **Enhanced Feature Specifications** — updated requirements + compact securability notes per feature
-4. **Cross-Cutting Securability Requirements** — shared controls
+1. **ASVS Level Decision**
+2. **Feature ↔ ASVS Coverage Matrix**
+3. **Enhanced Feature Specifications** (per-feature: Actor / Data / Trust Boundaries / ASVS Mapping / Updated Requirements / Acceptance Criteria / Securability Notes)
+4. **Cross-Cutting Securability Requirements**
 5. **Open Gaps and Assumptions**
 
-## Quality Checklist
+## Quality Gates
 
-- [ ] ASVS level selected before requirement mapping
-- [ ] Every feature mapped to applicable ASVS requirements
+- [ ] ASVS level selected and justified before requirement mapping
+- [ ] Every feature mapped to all applicable ASVS chapters at the chosen level
+- [ ] Gap-pattern table applied to every relevant feature
 - [ ] Missing/partial requirements converted into concrete PRD updates
-- [ ] Material SSEM and FIASSE considerations captured per feature in compact securability notes
-- [ ] Acceptance criteria are testable and unambiguous
+- [ ] Material SSEM/FIASSE points captured per feature in compact notes
+- [ ] Acceptance criteria are behaviorally testable and unambiguous
 - [ ] Trust boundaries and data handling expectations are explicit
+- [ ] Open gaps and assumptions listed
 
 ## References
 
+- [skills/prd-securability-enhancement/SKILL.md](../../skills/prd-securability-enhancement/SKILL.md) — level rubric, ASVS gap pattern table, output templates, quality checklist
 - `data/asvs/README.md`
 - `data/asvs/V*.md`
-- `data/fiasse/S2.1.md` — Securable Paradigm
-- `data/fiasse/S2.2.md` — Resiliently Add Computing Value
-- `data/fiasse/S2.3.md` — Reducing Material Impact
-- `data/fiasse/S2.4.md` — Aligning Security with Development
-- `data/fiasse/S2.5.md` — Transparency Principle
-- `data/fiasse/S2.6.md` — Principle of Least Astonishment
+- `data/fiasse/S2.1.md`–`S2.6.md` — FIASSE v1.0.4 foundational principles (incl. Transparency S2.5, Least Astonishment S2.6)
 - `data/fiasse/S3.2.1.md`–`S3.2.3.md` — SSEM attribute umbrellas (incl. `S3.2.1.4.md` Observability)
 - `data/fiasse/S4.3.md`, `S4.4.md`, `S4.4.1.md`, `S4.4.1.1.md`, `S4.4.1.2.md` — Boundary Control, Resilient Coding, Canonical Input Handling
 - `data/fiasse/S4.5.md`, `S4.6.md` — Dependency Management & Stewardship
