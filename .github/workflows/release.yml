@@ -1,0 +1,137 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get tag name
+        id: tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Build plugin ZIP
+        id: build
+        env:
+          TAG: ${{ steps.tag.outputs.TAG }}
+        run: |
+          set -euo pipefail
+
+          PLUGIN_ID="securable"
+          DIST_DIR="dist"
+          ZIP_NAME="${PLUGIN_ID}-${TAG}.zip"
+
+          echo "→ Cleaning dist directory"
+          rm -rf "$DIST_DIR"
+          mkdir -p "$DIST_DIR"
+
+          echo "→ Creating temporary build directory"
+          BUILD_DIR="$(mktemp -d)"
+          PLUGIN_DIR="${BUILD_DIR}/${PLUGIN_ID}"
+          mkdir -p "$PLUGIN_DIR"
+
+          echo "→ Copying plugin files into build directory"
+          rsync -a \
+            --exclude ".git" \
+            --exclude "dist" \
+            --exclude ".DS_Store" \
+            --exclude ".*.swp" \
+            ./ "$PLUGIN_DIR"/
+
+          echo "→ Creating ZIP archive"
+          (
+            cd "$BUILD_DIR"
+            zip -r "$ZIP_NAME" "$PLUGIN_ID"
+          )
+          mv "${BUILD_DIR}/${ZIP_NAME}" "$DIST_DIR/"
+
+          echo "→ Generating SHA256 hash"
+          sha256sum "$DIST_DIR/$ZIP_NAME" | awk '{print $1}' > "$DIST_DIR/${ZIP_NAME}.sha256"
+
+          echo ""
+          echo "✔ ZIP created: $DIST_DIR/$ZIP_NAME"
+          echo "✔ SHA256 written to: $DIST_DIR/${ZIP_NAME}.sha256"
+          echo ""
+          echo "SHA256:"
+          cat "$DIST_DIR/${ZIP_NAME}.sha256"
+
+          echo "ZIP_NAME=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "DIST_DIR=${DIST_DIR}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate marketplace.json
+        env:
+          TAG: ${{ steps.tag.outputs.TAG }}
+          ZIP_NAME: ${{ steps.build.outputs.ZIP_NAME }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          VERSION="${TAG#v}"
+          DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/${ZIP_NAME}"
+          REPO_URL="https://github.com/${REPO}"
+
+          python3 - <<PYEOF
+          import json, os, sys
+
+          required = ["DOWNLOAD_URL", "VERSION", "REPO_URL"]
+          missing = [v for v in required if not os.environ.get(v)]
+          if missing:
+            print(f"ERROR: missing environment variables: {missing}", file=sys.stderr)
+            sys.exit(1)
+
+          marketplace = {
+            "name": "securable-claude-plugins",
+            "owner": {"name": "Alton Crossley"},
+            "metadata": {
+              "description": "FIASSE/SSEM securability engineering plugins for Claude Code"
+            },
+            "plugins": [
+              {
+                "name": "securable-claude-plugin",
+                "source": os.environ["DOWNLOAD_URL"],
+                "description": "Secure code generation, securability analysis, and PRD enhancement through the FIASSE/SSEM framework.",
+                "version": os.environ["VERSION"],
+                "author": {"name": "Alton Crossley"},
+                "homepage": os.environ["REPO_URL"],
+                "repository": os.environ["REPO_URL"],
+                "license": "CC-BY-4.0",
+                "keywords": ["security", "securability", "code-review", "FIASSE", "SSEM", "OWASP", "ASVS"],
+                "category": "security",
+                "tags": ["secure-by-design", "code-generation", "requirements", "compliance"]
+              }
+            ]
+          }
+
+          with open("dist/marketplace.json", "w") as f:
+            json.dump(marketplace, f, indent=2)
+            f.write("\n")
+          PYEOF
+
+          echo "✔ marketplace.json written to dist/marketplace.json"
+          cat dist/marketplace.json
+
+      - name: Create GitHub Release and upload artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.TAG }}
+          ZIP_NAME: ${{ steps.build.outputs.ZIP_NAME }}
+          DIST_DIR: ${{ steps.build.outputs.DIST_DIR }}
+        run: |
+          set -euo pipefail
+
+          gh release create "$TAG" \
+            --title "Release $TAG" \
+            --generate-notes \
+            "$DIST_DIR/$ZIP_NAME" \
+            "$DIST_DIR/${ZIP_NAME}.sha256" \
+            "$DIST_DIR/marketplace.json"
