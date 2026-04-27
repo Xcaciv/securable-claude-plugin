@@ -106,7 +106,7 @@ The skill at [skills/securability-engineering-review/SKILL.md](../skills/securab
 
 ### Individual Findings
 
-For each finding, use the format defined in [templates/finding.md](finding.md). Findings name the SSEM pillar and attribute, the FIASSE v1.0.4 reference, the pattern tag, location, current state, evidence, impact, remediation, expected improvement, verification, and confidence.
+For each finding, use the format defined in [finding.md](finding.md). Findings name the SSEM pillar and attribute, the FIASSE v1.0.4 reference, the pattern tag, location, current state, evidence, impact, remediation, expected improvement, verification, and confidence.
 
 ---
 
