@@ -42,7 +42,10 @@ jq -n \
     plugins: [
       {
         name: $plugin.name,
-        source: $zip_url,
+        source: {
+          type: "zip",
+          url: $zip_url
+        },
         description: ($plugin.description // ""),
         version: $tag,
         author: ($plugin.author // {}),
