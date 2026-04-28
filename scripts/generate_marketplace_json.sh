@@ -51,7 +51,11 @@ jq -n \
         license: ($plugin.license // ""),
         keywords: ($plugin.keywords // []),
         category: "security",
-        tags: ["release", $tag]
+        tags: [
+        "secure-by-design",
+        "code-generation",
+        "requirements",
+        "compliance"]
       }
     ]
   }' > "${DIST_DIR}/marketplace.json"
