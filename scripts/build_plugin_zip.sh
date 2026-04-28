@@ -5,13 +5,20 @@ set -euo pipefail
 PLUGIN_ID="${PLUGIN_ID:-securable}"
 DIST_DIR="${DIST_DIR:-dist}"
 TAG="${1:-${GITHUB_REF_NAME:-}}"
+PLUGIN_JSON_SOURCE=".claude-plugin/plugin.json"
 
 if [[ -z "${TAG}" ]]; then
   echo "Tag is required. Pass it as the first argument or set GITHUB_REF_NAME." >&2
   exit 1
 fi
 
+if [[ ! -f "${PLUGIN_JSON_SOURCE}" ]]; then
+  echo "Missing ${PLUGIN_JSON_SOURCE}" >&2
+  exit 1
+fi
+
 ZIP_NAME="${PLUGIN_ID}-${TAG}.zip"
+PLUGIN_VERSION="${TAG#v}"
 
 # --- PREP ---
 echo "-> Cleaning dist directory"
@@ -36,6 +43,34 @@ rsync -av \
   --exclude ".DS_Store" \
   --exclude ".*.swp" \
   ./ "${PLUGIN_DIR}/"
+
+# Ensure packaged plugin metadata lives at the plugin root with release version.
+PYTHON_BIN=""
+if command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="python3"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="python"
+else
+  echo "Python is required to generate ${PLUGIN_DIR}/plugin.json" >&2
+  exit 1
+fi
+
+"${PYTHON_BIN}" - <<PYEOF
+import json
+
+source_path = "${PLUGIN_JSON_SOURCE}"
+target_path = "${PLUGIN_DIR}/plugin.json"
+version = "${PLUGIN_VERSION}"
+
+with open(source_path, "r", encoding="utf-8") as f:
+    plugin = json.load(f)
+
+plugin["version"] = version
+
+with open(target_path, "w", encoding="utf-8") as f:
+    json.dump(plugin, f, indent=2)
+    f.write("\n")
+PYEOF
 
 # --- ZIP ---
 echo "-> Creating ZIP archive"
