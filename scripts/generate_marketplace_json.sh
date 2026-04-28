@@ -43,8 +43,9 @@ jq -n \
       {
         name: $plugin.name,
         source: {
-          type: "zip",
-          url: $zip_url
+          "source": "github",
+          "repo": "Securability-Engineering/securable-claude-plugin",
+          "ref": "$tag"
         },
         description: ($plugin.description // ""),
         version: $tag,

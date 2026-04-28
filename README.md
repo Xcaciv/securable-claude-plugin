@@ -12,17 +12,8 @@ This plugin augments Claude Code with three capabilities:
 
 ## Installation
 
-Add this plugin to your project by cloning it into your workspace or adding it as a git submodule:
-
-```bash
-# Clone directly
-git clone https://github.com/Xcaciv/securable-claude-plugin.git
-
-# Or as a submodule
-git submodule add https://github.com/Xcaciv/securable-claude-plugin.git
-```
-
-Then symlink or copy the `.claude/` directory and `CLAUDE.md` file into your project root, or include the plugin directory in your Claude Code workspace.
+Recommended: install through the Claude Code plugin manager.
+You can open the interactive manager with `/plugin`, then use the Discover and Marketplaces tabs to add/install graphically.
 
 ## Slash Commands
 
