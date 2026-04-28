@@ -4,18 +4,18 @@
     "name": "Alton Crossley"
   },
   "metadata": {
-    "description": "FIASSE/SSEM securability engineering plugins for Claude Code"
+    "description": "OWASP FIASSE/SSEM securability engineering plugins for Claude Code"
   },
   "plugins": [
     {
       "name": "securable-claude-plugin",
       "source": "./",
       "description": "Secure code generation, securability analysis, and PRD enhancement through the FIASSE/SSEM framework.",
-      "version": "1.0.0",
+      "version": "1.0.4",
       "author": {
         "name": "Alton Crossley"
       },
-      "homepage": "https://github.com/Xcaciv/securable-claude-plugin",
+      "homepage": "https://owaspfiasse.org",
       "repository": "https://github.com/Xcaciv/securable-claude-plugin",
       "license": "CC-BY-4.0",
       "keywords": [
